@@ -1,7 +1,7 @@
-import { App, Modal, FuzzySuggestModal, Setting } from 'obsidian';
+import { App, Modal, FuzzySuggestModal, Setting, setIcon } from 'obsidian';
 import { LintenValidationResponse, LintenCheckLinksResponse } from './apiClient';
 import { TEMPLATES, IndustryTemplate } from './templates';
-import { LINTEN_LOGO_SVG } from './logo';
+import { LINTEN_ICON_ID } from './logo';
 
 export class LintenAuditModal extends Modal {
   private response: LintenValidationResponse;
@@ -28,7 +28,7 @@ export class LintenAuditModal extends Modal {
     // 1. Sleek Modern Header with Authentic Linten Logo
     const headerEl = contentEl.createDiv({ cls: 'linten-modal-header' });
     const logoBadge = headerEl.createDiv({ cls: 'linten-logo-badge' });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     const titleRow = titleWrap.createDiv({ cls: 'linten-title-row' });
@@ -49,11 +49,11 @@ export class LintenAuditModal extends Modal {
 
     // 2. High-Impact Primary Score Banner
     const scoreBanner = contentEl.createDiv({ cls: `linten-score-banner ${scoreStatusClass}` });
-    scoreBanner.style.borderLeftColor = scoreColor;
+    scoreBanner.setCssStyles({ borderLeftColor: scoreColor });
 
     const scoreRing = scoreBanner.createDiv({ cls: 'linten-score-ring' });
     const scoreNum = scoreRing.createDiv({ text: `${scores.overall}`, cls: 'linten-score-num' });
-    scoreNum.style.color = scoreColor;
+    scoreNum.setCssStyles({ color: scoreColor });
     scoreRing.createSpan({ text: '/100', cls: 'linten-score-denom' });
 
     const scoreDesc = scoreBanner.createDiv({ cls: 'linten-score-desc' });
@@ -123,7 +123,6 @@ export class LintenAuditModal extends Modal {
         headRow.createSpan({ cls: 'linten-finding-head', text: f.title || 'Diagnostic Finding' });
 
         if (f.detail) {
-          // If detail contains URLs (e.g. broken links), format them as structured pills
           const urls = f.detail.match(/https?:\/\/[^\s,]+/g);
           if (urls && urls.length > 0) {
             const detailText = f.detail.replace(/https?:\/\/[^\s,]+(,\s*)?/g, '').trim();
@@ -214,21 +213,23 @@ export class LintenAuditModal extends Modal {
     const numColor = val >= 90 ? '#10B981' : val >= 70 ? '#F59E0B' : '#EF4444';
     
     const num = box.createDiv({ text: `${val}%`, cls: 'linten-subscore-num' });
-    num.style.color = numColor;
+    num.setCssStyles({ color: numColor });
 
     box.createDiv({ text: label, cls: 'linten-subscore-label' });
 
     const meter = box.createDiv({ cls: 'linten-meter-track' });
     const fill = meter.createDiv({ cls: 'linten-meter-fill' });
-    fill.style.width = `${Math.max(4, Math.min(100, val))}%`;
-    fill.style.backgroundColor = numColor;
+    fill.setCssStyles({
+      width: `${Math.max(4, Math.min(100, val))}%`,
+      backgroundColor: numColor
+    });
   }
 
   private createSpecItem(container: HTMLElement, label: string, val: string, color?: string) {
     const item = container.createDiv({ cls: 'linten-spec-item' });
     item.createSpan({ text: label, cls: 'linten-spec-label' });
     const valEl = item.createSpan({ text: val, cls: 'linten-spec-val' });
-    if (color) valEl.style.color = color;
+    if (color) valEl.setCssStyles({ color });
   }
 
   onClose() {
@@ -254,7 +255,7 @@ export class LintenLinkAuditModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'linten-modal-header' });
     const logoBadge = headerEl.createDiv({ cls: 'linten-logo-badge' });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     const titleRow = titleWrap.createDiv({ cls: 'linten-title-row' });
@@ -267,11 +268,11 @@ export class LintenLinkAuditModal extends Modal {
 
     const scoreColor = this.report.healthScore >= 90 ? '#10B981' : this.report.healthScore >= 70 ? '#F59E0B' : '#EF4444';
     const banner = contentEl.createDiv({ cls: 'linten-score-banner' });
-    banner.style.borderLeftColor = scoreColor;
+    banner.setCssStyles({ borderLeftColor: scoreColor });
 
     const scoreRing = banner.createDiv({ cls: 'linten-score-ring' });
     const scoreNum = scoreRing.createDiv({ text: `${this.report.healthScore}`, cls: 'linten-score-num' });
-    scoreNum.style.color = scoreColor;
+    scoreNum.setCssStyles({ color: scoreColor });
     scoreRing.createSpan({ text: '/100', cls: 'linten-score-denom' });
 
     const desc = banner.createDiv({ cls: 'linten-score-desc' });
@@ -317,7 +318,7 @@ export class LintenLinkAuditModal extends Modal {
   private createBox(container: HTMLElement, label: string, val: string, color?: string) {
     const box = container.createDiv({ cls: 'linten-subscore-box' });
     const num = box.createDiv({ text: val, cls: 'linten-subscore-num' });
-    if (color) num.style.color = color;
+    if (color) num.setCssStyles({ color });
     box.createDiv({ text: label, cls: 'linten-subscore-label' });
   }
 
@@ -343,7 +344,7 @@ export class LintenBudgetModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'linten-modal-header' });
     const logoBadge = headerEl.createDiv({ cls: 'linten-logo-badge' });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     const titleRow = titleWrap.createDiv({ cls: 'linten-title-row' });
@@ -363,7 +364,7 @@ export class LintenBudgetModal extends Modal {
       const item = specBar.createDiv({ cls: 'linten-spec-item' });
       item.createSpan({ text: lbl, cls: 'linten-spec-label' });
       const v = item.createSpan({ text: val, cls: 'linten-spec-val' });
-      if (col) v.style.color = col;
+      if (col) v.setCssStyles({ color: col });
     };
     createItem('Estimated Tokens', `~${estimatedTokens.toLocaleString()}`, '#5271FF');
     createItem('Word Count', words.toLocaleString());
@@ -396,8 +397,10 @@ export class LintenBudgetModal extends Modal {
 
       const meter = item.createDiv({ cls: 'linten-meter-track' });
       const fill = meter.createDiv({ cls: 'linten-meter-fill' });
-      fill.style.width = `${Math.max(2, Math.min(100, pct))}%`;
-      fill.style.backgroundColor = isSafe ? '#10B981' : '#EF4444';
+      fill.setCssStyles({
+        width: `${Math.max(2, Math.min(100, pct))}%`,
+        backgroundColor: isSafe ? '#10B981' : '#EF4444'
+      });
     }
 
     const tip = contentEl.createDiv({ cls: 'linten-finding-item linten-tip-box' });
@@ -426,7 +429,7 @@ export class LintenTemplateModal extends FuzzySuggestModal<IndustryTemplate> {
   }
 
   getItems(): IndustryTemplate[] {
-    return Object.values(TEMPLATES);
+    return Object.values<IndustryTemplate>(TEMPLATES);
   }
 
   getItemText(item: IndustryTemplate): string {
@@ -439,7 +442,7 @@ export class LintenTemplateModal extends FuzzySuggestModal<IndustryTemplate> {
 }
 
 /**
- * Mobile-safe, zero-block dialog replacing window.prompt
+ * Clean Single-Input Prompt Modal (Domain, URL, or Name)
  */
 export class LintenPromptModal extends Modal {
   private titleText: string;
@@ -450,18 +453,20 @@ export class LintenPromptModal extends Modal {
 
   constructor(
     app: App,
-    title: string,
-    placeholder: string,
-    initialValue: string,
-    submitLabel: string,
-    onSubmit: (value: string) => void
+    options: {
+      title: string;
+      placeholder: string;
+      initialValue?: string;
+      submitLabel?: string;
+      onSubmit: (value: string) => void;
+    }
   ) {
     super(app);
-    this.titleText = title;
-    this.placeholder = placeholder;
-    this.initialValue = initialValue;
-    this.submitLabel = submitLabel;
-    this.onSubmit = onSubmit;
+    this.titleText = options.title;
+    this.placeholder = options.placeholder;
+    this.initialValue = options.initialValue || '';
+    this.submitLabel = options.submitLabel || 'Submit';
+    this.onSubmit = options.onSubmit;
   }
 
   onOpen() {
@@ -471,7 +476,7 @@ export class LintenPromptModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'linten-modal-header' });
     const logoBadge = headerEl.createDiv({ cls: 'linten-logo-badge' });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     titleWrap.createEl('h2', { text: this.titleText, cls: 'linten-modal-title' });
@@ -535,7 +540,7 @@ export class LintenBadgeModal extends Modal {
 
     const headerEl = contentEl.createDiv({ cls: 'linten-modal-header' });
     const logoBadge = headerEl.createDiv({ cls: 'linten-logo-badge' });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     titleWrap.createEl('h2', { text: 'Linten Compliance Badge', cls: 'linten-modal-title' });
@@ -556,14 +561,15 @@ export class LintenBadgeModal extends Modal {
     const snippetBox = contentEl.createDiv({ cls: 'linten-finding-item' });
     snippetBox.createDiv({ cls: 'linten-finding-head', text: 'Markdown Badge Code:' });
     const codeEl = snippetBox.createEl('code', { text: mdSnippet });
-    codeEl.style.fontSize = '0.78rem';
+    codeEl.setCssStyles({ fontSize: '0.78rem' });
 
     const actions = contentEl.createDiv({ cls: 'linten-modal-actions' });
 
     const btnCopyMd = actions.createEl('button', { text: 'Copy Markdown', cls: 'linten-action-btn mod-cta' });
-    btnCopyMd.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(mdSnippet);
-      this.close();
+    btnCopyMd.addEventListener('click', () => {
+      void navigator.clipboard.writeText(mdSnippet).then(() => {
+        this.close();
+      });
     });
 
     if (this.onInsertNote) {
@@ -575,15 +581,17 @@ export class LintenBadgeModal extends Modal {
     }
 
     const btnCopyHtml = actions.createEl('button', { text: 'Copy HTML', cls: 'linten-action-btn' });
-    btnCopyHtml.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(htmlSnippet);
-      this.close();
+    btnCopyHtml.addEventListener('click', () => {
+      void navigator.clipboard.writeText(htmlSnippet).then(() => {
+        this.close();
+      });
     });
 
     const btnCopySvg = actions.createEl('button', { text: 'Copy SVG URL', cls: 'linten-action-btn' });
-    btnCopySvg.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(badgeUrl);
-      this.close();
+    btnCopySvg.addEventListener('click', () => {
+      void navigator.clipboard.writeText(badgeUrl).then(() => {
+        this.close();
+      });
     });
 
     const footer = contentEl.createDiv({ cls: 'linten-modal-footer' });

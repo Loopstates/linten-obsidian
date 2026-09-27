@@ -25,7 +25,7 @@ export class LintenSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Linten: llms.txt Validator Settings' });
+    new Setting(containerEl).setName('Linten Settings').setHeading();
 
     // Transparency Notice for Obsidian Community Compliance
     const noticeBox = containerEl.createDiv({ cls: 'linten-settings-notice' });

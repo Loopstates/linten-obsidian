@@ -279,26 +279,26 @@
 }
 
 .linten-btn-synthesize {
-  background-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
-  font-weight: 600 !important;
-  font-size: 0.8rem !important;
-  padding: 6px 14px !important;
-  border-radius: 4px !important;
-  border: 1px solid var(--interactive-accent) !important;
-  cursor: pointer !important;
-  white-space: nowrap !important;
-  transition: opacity 0.15s ease !important;
-  box-shadow: none !important;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--interactive-accent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+  box-shadow: none;
 }
 
 .linten-btn-synthesize:hover {
-  opacity: 0.9 !important;
-  box-shadow: none !important;
+  opacity: 0.9;
+  box-shadow: none;
 }
 
 .linten-btn-synthesize:active {
-  opacity: 0.75 !important;
+  opacity: 0.75;
 }
 
 /* 6. Findings & Diagnostics List */
@@ -460,35 +460,35 @@
 }
 
 .linten-action-btn {
-  font-size: 0.78rem !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  padding: 6px 12px !important;
-  border-radius: 6px !important;
-  background-color: var(--background-secondary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  color: var(--text-normal) !important;
-  transition: all 0.15s ease !important;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  transition: all 0.15s ease;
 }
 
 .linten-action-btn:hover {
-  background-color: var(--background-modifier-hover) !important;
+  background-color: var(--background-modifier-hover);
   transform: translateY(-1px);
 }
 
 .linten-action-btn.mod-cta {
-  background-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
-  border: 1px solid var(--interactive-accent) !important;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: 1px solid var(--interactive-accent);
 }
 
 .linten-action-btn.mod-cta:hover {
-  opacity: 0.9 !important;
+  opacity: 0.9;
 }
 
 .linten-action-btn.mod-warning {
-  border-color: rgba(245, 158, 11, 0.5) !important;
-  color: #F59E0B !important;
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #F59E0B;
 }
 
 /* 8. Status Bar Item */

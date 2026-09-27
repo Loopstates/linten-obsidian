@@ -1,5 +1,4 @@
 import {
-  App,
   Plugin,
   Notice,
   MarkdownView,
@@ -46,36 +45,36 @@ export default class LintenPlugin extends Plugin {
     // This allows llms.txt and llms-full.txt to be visible and directly editable in the vault
     try {
       this.registerExtensions(['txt'], 'markdown');
-    } catch (e) {
+    } catch {
       console.warn('Linten notice: .txt extension already registered by another plugin or system.');
     }
 
     // 3. Ribbon Icon using Authentic Linten Logo
-    this.addRibbonIcon(LINTEN_ICON_ID, 'Linten: Validate llms.txt', async () => {
-      await this.validateActiveNote();
+    this.addRibbonIcon(LINTEN_ICON_ID, 'Linten: Validate llms.txt', () => {
+      void this.validateActiveNote();
     });
 
     // 4. Status Bar Item
     this.statusBarItemEl = this.addStatusBarItem();
     this.statusBarItemEl.addClass('linten-status-bar');
     this.updateStatusBar(null);
-    this.statusBarItemEl.onClickEvent(async () => {
+    this.statusBarItemEl.onClickEvent(() => {
       if (this.lastAuditResponse) {
         this.openAuditModal(this.lastAuditDocName, this.lastAuditResponse);
       } else {
-        await this.validateActiveNote();
+        void this.validateActiveNote();
       }
     });
 
     // 5. Command: Validate Current Note
     this.addCommand({
-      id: 'linten-validate-current-note',
+      id: 'validate-current-note',
       name: 'Validate current note as llms.txt',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
           if (!checking) {
-            this.validateActiveNote();
+            void this.validateActiveNote();
           }
           return true;
         }
@@ -85,76 +84,78 @@ export default class LintenPlugin extends Plugin {
 
     // 6. Command: View Last Audit Report
     this.addCommand({
-      id: 'linten-show-last-report',
+      id: 'show-last-report',
       name: 'View last audit report',
-      callback: async () => {
+      callback: () => {
         if (this.lastAuditResponse) {
           this.openAuditModal(this.lastAuditDocName, this.lastAuditResponse);
         } else {
-          await this.validateActiveNote();
+          void this.validateActiveNote();
         }
       }
     });
 
     // 7. Command: Audit Remote Domain or URL
     this.addCommand({
-      id: 'linten-audit-domain',
+      id: 'audit-domain',
       name: 'Audit remote website or URL (e.g. stripe.com)',
       callback: () => {
-        new LintenPromptModal(
-          this.app,
-          'Linten: Audit Remote Domain or URL',
-          'stripe.com or https://docs.anthropic.com/llms.txt',
-          '',
-          'Audit URL',
-          async (url: string) => {
+        new LintenPromptModal(this.app, {
+          title: 'Linten: Audit Remote Domain or URL',
+          placeholder: 'stripe.com or https://docs.anthropic.com/llms.txt',
+          initialValue: '',
+          submitLabel: 'Audit URL',
+          onSubmit: (url: string) => {
             if (!url) return;
-            await this.auditRemoteUrl(url);
+            void this.auditRemoteUrl(url);
           }
-        ).open();
+        }).open();
       }
     });
 
     // 8. Command: Insert Industry Starter Template (30 Presets)
     this.addCommand({
-      id: 'linten-insert-template',
+      id: 'insert-template',
       name: 'Insert industry starter template (30 presets)',
       callback: () => {
-        new LintenTemplateModal(this.app, async (template: IndustryTemplate) => {
-          const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-          if (activeView && activeView.editor) {
-            const currentText = activeView.editor.getValue().trim();
-            if (!currentText) {
-              activeView.editor.setValue(template.content);
-              new Notice(`Applied "${template.name}" template to active note.`);
-              return;
+        new LintenTemplateModal(this.app, (template: IndustryTemplate) => {
+          void (async () => {
+            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+            if (activeView && activeView.editor) {
+              const currentText = activeView.editor.getValue().trim();
+              if (!currentText) {
+                activeView.editor.setValue(template.content);
+                new Notice(`Applied "${template.name}" template to active note.`);
+                return;
+              }
             }
-          }
 
-          // Use .txt if vault supports it or matches active convention
-          const ext = activeView?.file?.extension === 'md' ? 'md' : 'txt';
-          const baseName = `llms-${template.id}.${ext}`;
-          try {
-            const newFile = await this.createUniqueVaultFile(baseName, template.content);
-            const leaf = this.app.workspace.getLeaf(false);
-            await leaf.openFile(newFile);
-            new Notice(`Created "${newFile.name}" with "${template.name}" template.`);
-          } catch (err: any) {
-            new Notice(`Could not create note: ${err.message}`);
-          }
+            // Use .txt if vault supports it or matches active convention
+            const ext = activeView?.file?.extension === 'md' ? 'md' : 'txt';
+            const baseName = `llms-${template.id}.${ext}`;
+            try {
+              const newFile = await this.createUniqueVaultFile(baseName, template.content);
+              const leaf = this.app.workspace.getLeaf(false);
+              await leaf.openFile(newFile);
+              new Notice(`Created "${newFile.name}" with "${template.name}" template.`);
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : 'Unknown error';
+              new Notice(`Could not create note: ${msg}`);
+            }
+          })();
         }).open();
       }
     });
 
     // 9. Command: Audit Live Link Health (100-Link Probing)
     this.addCommand({
-      id: 'linten-audit-links',
+      id: 'audit-links',
       name: 'Audit live link health (100-link probe)',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.auditNoteLinks(activeView.file);
+            void this.auditNoteLinks(activeView.file);
           }
           return true;
         }
@@ -164,7 +165,7 @@ export default class LintenPlugin extends Plugin {
 
     // 10. Command: Show Frontier AI Model Context Budgeting
     this.addCommand({
-      id: 'linten-show-ai-budget',
+      id: 'show-ai-budget',
       name: 'Estimate frontier AI context budget',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -181,32 +182,31 @@ export default class LintenPlugin extends Plugin {
 
     // 11. Command: Generate Starter llms.txt from website
     this.addCommand({
-      id: 'linten-generate-starter',
+      id: 'generate-starter',
       name: 'Generate starter llms.txt from website',
       callback: () => {
-        new LintenPromptModal(
-          this.app,
-          'Linten: Scaffold Starter llms.txt',
-          'stripe.com or loopstates.com',
-          '',
-          'Generate Starter',
-          async (domain: string) => {
+        new LintenPromptModal(this.app, {
+          title: 'Linten: Scaffold Starter llms.txt',
+          placeholder: 'stripe.com or loopstates.com',
+          initialValue: '',
+          submitLabel: 'Generate Starter',
+          onSubmit: (domain: string) => {
             if (!domain) return;
-            await this.generateStarterFromDomain(domain);
+            void this.generateStarterFromDomain(domain);
           }
-        ).open();
+        }).open();
       }
     });
 
     // 12. Command: Synthesize Companion llms-full.txt
     this.addCommand({
-      id: 'linten-synthesize-full',
+      id: 'synthesize-full',
       name: 'Synthesize companion llms-full.txt from links',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.synthesizeFull(activeView.file);
+            void this.synthesizeFull(activeView.file);
           }
           return true;
         }
@@ -216,7 +216,7 @@ export default class LintenPlugin extends Plugin {
 
     // 13. Command: Canonical AST Auto-Formatter
     this.addCommand({
-      id: 'linten-format-spec',
+      id: 'format-spec',
       name: 'Format note to canonical llms.txt AST conventions',
       editorCallback: (editor: Editor) => {
         const text = editor.getValue();
@@ -228,7 +228,7 @@ export default class LintenPlugin extends Plugin {
 
     // 14. Command: Generate README / Note Compliance Badge
     this.addCommand({
-      id: 'linten-generate-badge',
+      id: 'generate-badge',
       name: 'Generate README / Note compliance badge',
       callback: () => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -251,13 +251,13 @@ export default class LintenPlugin extends Plugin {
 
     // 15. Command: Export Compliance Audit Report
     this.addCommand({
-      id: 'linten-export-report',
+      id: 'export-report',
       name: 'Export compliance audit report (.md or .json)',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.exportReportForActiveFile(activeView.file);
+            void this.exportReportForActiveFile(activeView.file);
           }
           return true;
         }
@@ -353,7 +353,7 @@ export default class LintenPlugin extends Plugin {
     if (score !== null) {
       const color = score >= 90 ? '#10B981' : score >= 70 ? '#F59E0B' : '#EF4444';
       this.statusBarItemEl.setText(`Linten: ${score}/100`);
-      this.statusBarItemEl.style.color = color;
+      this.statusBarItemEl.setCssStyles({ color });
       
       const report = response?.report?.scores;
       const spec = response?.specialist?.metrics;
@@ -369,7 +369,7 @@ export default class LintenPlugin extends Plugin {
       this.statusBarItemEl.setAttribute('title', tooltip);
     } else {
       this.statusBarItemEl.setText('Linten');
-      this.statusBarItemEl.style.color = '#5271FF';
+      this.statusBarItemEl.setCssStyles({ color: '#5271FF' });
       this.statusBarItemEl.setAttribute('aria-label', 'Linten: llms.txt Validator by Loopstates. Click to audit.');
       this.statusBarItemEl.setAttribute('title', 'Linten: llms.txt Validator by Loopstates. Click to audit.');
     }
@@ -392,7 +392,7 @@ export default class LintenPlugin extends Plugin {
     }
 
     this.statusBarItemEl.setText('Linten: Auditing...');
-    this.statusBarItemEl.style.color = '#5271FF';
+    this.statusBarItemEl.setCssStyles({ color: '#5271FF' });
     new Notice('Linten: Auditing llms.txt...');
 
     try {
@@ -408,17 +408,18 @@ export default class LintenPlugin extends Plugin {
       } else {
         new Notice(`Linten: Audit complete. Score: ${score}/100`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.statusBarItemEl.setText('Linten: Error');
-      this.statusBarItemEl.style.color = '#EF4444';
-      new Notice(`Linten Validation failed: ${err.message || 'Network error'}`);
+      this.statusBarItemEl.setCssStyles({ color: '#EF4444' });
+      const msg = err instanceof Error ? err.message : 'Network error';
+      new Notice(`Linten Validation failed: ${msg}`);
     }
   }
 
   async auditRemoteUrl(targetUrl: string) {
     new Notice(`Linten: Auditing remote URL ${targetUrl}...`);
     this.statusBarItemEl.setText('Linten: Auditing...');
-    this.statusBarItemEl.style.color = '#5271FF';
+    this.statusBarItemEl.setCssStyles({ color: '#5271FF' });
 
     try {
       const response = await auditRemoteUrlNote(this.settings.apiUrl, targetUrl);
@@ -430,49 +431,52 @@ export default class LintenPlugin extends Plugin {
 
       this.openAuditModal(targetUrl, response);
       new Notice(`Linten: Remote audit complete for ${targetUrl} (Score: ${score}/100)`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.statusBarItemEl.setText('Linten: Error');
-      this.statusBarItemEl.style.color = '#EF4444';
-      new Notice(`Remote Audit failed: ${err.message}`);
+      this.statusBarItemEl.setCssStyles({ color: '#EF4444' });
+      const msg = err instanceof Error ? err.message : 'Network error';
+      new Notice(`Remote Audit failed: ${msg}`);
     }
   }
 
   private openAuditModal(docName: string, response: LintenValidationResponse, file?: TFile) {
-    new LintenAuditModal(this.app, docName, response, async (action: string) => {
-      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-      const targetFile = file || activeView?.file;
+    new LintenAuditModal(this.app, docName, response, (action: string) => {
+      void (async () => {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const targetFile = file || activeView?.file;
 
-      if (action === 'audit-links') {
-        if (targetFile) {
-          await this.auditNoteLinks(targetFile);
-        } else {
-          new Notice('Open an active note to audit links.');
+        if (action === 'audit-links') {
+          if (targetFile) {
+            await this.auditNoteLinks(targetFile);
+          } else {
+            new Notice('Open an active note to audit links.');
+          }
+        } else if (action === 'budget') {
+          if (activeView) {
+            new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
+          } else {
+            new Notice('Open an active note to estimate budget.');
+          }
+        } else if (action === 'format') {
+          if (activeView) {
+            activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
+            new Notice('Note formatted according to canonical llms.txt conventions.');
+          }
+        } else if (action === 'export') {
+          if (targetFile) {
+            await this.exportReportForActiveFile(targetFile);
+          } else {
+            await this.exportReportStandalone(docName, response);
+          }
+        } else if (action === 'badge') {
+          const domain = docName.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') || 'loopstates.com';
+          new LintenBadgeModal(this.app, domain).open();
+        } else if (action === 'synthesize') {
+          if (targetFile) {
+            await this.synthesizeFull(targetFile);
+          }
         }
-      } else if (action === 'budget') {
-        if (activeView) {
-          new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
-        } else {
-          new Notice('Open an active note to estimate budget.');
-        }
-      } else if (action === 'format') {
-        if (activeView) {
-          activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
-          new Notice('Note formatted according to canonical llms.txt conventions.');
-        }
-      } else if (action === 'export') {
-        if (targetFile) {
-          await this.exportReportForActiveFile(targetFile);
-        } else {
-          await this.exportReportStandalone(docName, response);
-        }
-      } else if (action === 'badge') {
-        const domain = docName.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') || 'loopstates.com';
-        new LintenBadgeModal(this.app, domain).open();
-      } else if (action === 'synthesize') {
-        if (targetFile) {
-          await this.synthesizeFull(targetFile);
-        }
-      }
+      })();
     }).open();
   }
 
@@ -488,8 +492,9 @@ export default class LintenPlugin extends Plugin {
     try {
       const report = await checkNoteLinks(this.settings.apiUrl, content);
       new LintenLinkAuditModal(this.app, file.name, report).open();
-    } catch (err: any) {
-      new Notice(`Linten Link Auditor error: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      new Notice(`Linten Link Auditor error: ${msg}`);
     }
   }
 
@@ -506,8 +511,9 @@ export default class LintenPlugin extends Plugin {
         await leaf.openFile(newFile);
         new Notice(`Created "${newFile.name}" successfully.`);
       }
-    } catch (err: any) {
-      new Notice(`Scaffolding failed: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      new Notice(`Scaffolding failed: ${msg}`);
     }
   }
 
@@ -523,7 +529,6 @@ export default class LintenPlugin extends Plugin {
     try {
       const res = await synthesizeFullNote(this.settings.apiUrl, content);
       if (res.fullContent) {
-        // Match the extension of current file (.txt or .md)
         const ext = file.extension === 'md' ? '.md' : '.txt';
         const fullFileName = normalizePath(file.path.replace(/\.[^/.]+$/, '') + '-full' + ext);
         
@@ -543,8 +548,9 @@ export default class LintenPlugin extends Plugin {
           `Linten: Companion manifest successfully created (~${res.metrics.estimatedTokens.toLocaleString()} tokens).`
         );
       }
-    } catch (err: any) {
-      new Notice(`Synthesizer failed: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      new Notice(`Synthesizer failed: ${msg}`);
     }
   }
 
@@ -563,8 +569,9 @@ export default class LintenPlugin extends Plugin {
       const leaf = this.app.workspace.getLeaf(false);
       await leaf.openFile(reportFile);
       new Notice(`Exported compliance audit report to "${reportFile.name}".`);
-    } catch (err: any) {
-      new Notice(`Failed to export report: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      new Notice(`Failed to export report: ${msg}`);
     }
   }
 
@@ -578,8 +585,9 @@ export default class LintenPlugin extends Plugin {
       const leaf = this.app.workspace.getLeaf(false);
       await leaf.openFile(reportFile);
       new Notice(`Exported compliance audit report to "${reportFile.name}".`);
-    } catch (err: any) {
-      new Notice(`Failed to export report: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      new Notice(`Failed to export report: ${msg}`);
     }
   }
 

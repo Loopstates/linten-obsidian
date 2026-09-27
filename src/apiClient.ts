@@ -1,7 +1,7 @@
 // Obsidian API Client for Linten Cloud
 // Cross-platform compatibility using Web Crypto (Desktop & Mobile) and Obsidian requestUrl
 
-import { requestUrl, RequestUrlParam } from 'obsidian';
+import { requestUrl } from 'obsidian';
 
 const CLIENT_SECRET = 'linten_loopstates_sec_handshake_2026';
 
@@ -143,17 +143,24 @@ async function generateAuthHeaders(): Promise<Record<string, string>> {
 /**
  * Normalizes error messages from Obsidian requestUrl failures or raw JSON responses
  */
-function extractErrorMessage(err: any): string {
-  if (err?.json && typeof err.json === 'object' && err.json.error) {
-    return err.json.error;
+function extractErrorMessage(err: unknown): string {
+  if (err && typeof err === 'object') {
+    const errorObj = err as Record<string, unknown>;
+    if (errorObj.json && typeof errorObj.json === 'object') {
+      const json = errorObj.json as Record<string, unknown>;
+      if (typeof json.error === 'string') return json.error;
+    }
+    if (typeof errorObj.text === 'string') {
+      try {
+        const parsed = JSON.parse(errorObj.text) as Record<string, unknown>;
+        if (typeof parsed?.error === 'string') return parsed.error;
+      } catch {
+        // Fall through to message
+      }
+    }
+    if (typeof errorObj.message === 'string') return errorObj.message;
   }
-  if (typeof err?.text === 'string') {
-    try {
-      const parsed = JSON.parse(err.text);
-      if (parsed.error) return parsed.error;
-    } catch {}
-  }
-  return err?.message || 'Network communication error';
+  return 'Network communication error';
 }
 
 export async function validateNoteContent(
@@ -171,7 +178,7 @@ export async function validateNoteContent(
       body: JSON.stringify({ content })
     });
     return res.json as LintenValidationResponse;
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(extractErrorMessage(err));
   }
 }
@@ -194,7 +201,7 @@ export async function auditRemoteUrlNote(
       headers
     });
     return res.json as LintenValidationResponse;
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(extractErrorMessage(err));
   }
 }
@@ -214,7 +221,7 @@ export async function generateStarterNote(
       headers
     });
     return res.json as LintenGenerateResponse;
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(extractErrorMessage(err));
   }
 }
@@ -234,7 +241,7 @@ export async function synthesizeFullNote(
       body: JSON.stringify({ content })
     });
     return res.json as LintenSynthesizeResponse;
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(extractErrorMessage(err));
   }
 }
@@ -254,7 +261,7 @@ export async function checkNoteLinks(
       body: JSON.stringify({ content })
     });
     return res.json as LintenCheckLinksResponse;
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new Error(extractErrorMessage(err));
   }
 }

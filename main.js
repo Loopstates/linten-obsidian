@@ -44,7 +44,7 @@ var LintenSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Linten: llms.txt Validator Settings" });
+    new import_obsidian.Setting(containerEl).setName("Linten Settings").setHeading();
     const noticeBox = containerEl.createDiv({ cls: "linten-settings-notice" });
     noticeBox.createEl("p", {
       text: "Privacy Notice: Linten connects to the Linten Cloud Middleware (linten.apps.loopstates.com) to execute live HTTP link reachability tests and spec parsing. Content is validated in memory and never stored."
@@ -103,18 +103,25 @@ async function generateAuthHeaders() {
   };
 }
 function extractErrorMessage(err) {
-  if ((err == null ? void 0 : err.json) && typeof err.json === "object" && err.json.error) {
-    return err.json.error;
-  }
-  if (typeof (err == null ? void 0 : err.text) === "string") {
-    try {
-      const parsed = JSON.parse(err.text);
-      if (parsed.error)
-        return parsed.error;
-    } catch (e) {
+  if (err && typeof err === "object") {
+    const errorObj = err;
+    if (errorObj.json && typeof errorObj.json === "object") {
+      const json = errorObj.json;
+      if (typeof json.error === "string")
+        return json.error;
     }
+    if (typeof errorObj.text === "string") {
+      try {
+        const parsed = JSON.parse(errorObj.text);
+        if (typeof (parsed == null ? void 0 : parsed.error) === "string")
+          return parsed.error;
+      } catch (e) {
+      }
+    }
+    if (typeof errorObj.message === "string")
+      return errorObj.message;
   }
-  return (err == null ? void 0 : err.message) || "Network communication error";
+  return "Network communication error";
 }
 async function validateNoteContent(apiUrl, content) {
   const endpoint = `${apiUrl.replace(/\/$/, "")}/validate?source=linten-obsidian`;
@@ -1064,7 +1071,7 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     contentEl.addClass("linten-modal-container");
     const headerEl = contentEl.createDiv({ cls: "linten-modal-header" });
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     const titleRow = titleWrap.createDiv({ cls: "linten-title-row" });
     titleRow.createEl("h2", { text: "Linten Compliance Audit", cls: "linten-modal-title" });
@@ -1080,10 +1087,10 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     const scoreColor = scores.overall >= 90 ? "#10B981" : scores.overall >= 70 ? "#F59E0B" : "#EF4444";
     const scoreStatusClass = scores.overall >= 90 ? "status-optimal" : scores.overall >= 70 ? "status-warning" : "status-error";
     const scoreBanner = contentEl.createDiv({ cls: `linten-score-banner ${scoreStatusClass}` });
-    scoreBanner.style.borderLeftColor = scoreColor;
+    scoreBanner.setCssStyles({ borderLeftColor: scoreColor });
     const scoreRing = scoreBanner.createDiv({ cls: "linten-score-ring" });
     const scoreNum = scoreRing.createDiv({ text: `${scores.overall}`, cls: "linten-score-num" });
-    scoreNum.style.color = scoreColor;
+    scoreNum.setCssStyles({ color: scoreColor });
     scoreRing.createSpan({ text: "/100", cls: "linten-score-denom" });
     const scoreDesc = scoreBanner.createDiv({ cls: "linten-score-desc" });
     const statusPill = scoreDesc.createSpan({ cls: `linten-status-pill ${scoreStatusClass}` });
@@ -1224,19 +1231,21 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     const box = container.createDiv({ cls: "linten-subscore-box" });
     const numColor = val >= 90 ? "#10B981" : val >= 70 ? "#F59E0B" : "#EF4444";
     const num = box.createDiv({ text: `${val}%`, cls: "linten-subscore-num" });
-    num.style.color = numColor;
+    num.setCssStyles({ color: numColor });
     box.createDiv({ text: label, cls: "linten-subscore-label" });
     const meter = box.createDiv({ cls: "linten-meter-track" });
     const fill = meter.createDiv({ cls: "linten-meter-fill" });
-    fill.style.width = `${Math.max(4, Math.min(100, val))}%`;
-    fill.style.backgroundColor = numColor;
+    fill.setCssStyles({
+      width: `${Math.max(4, Math.min(100, val))}%`,
+      backgroundColor: numColor
+    });
   }
   createSpecItem(container, label, val, color) {
     const item = container.createDiv({ cls: "linten-spec-item" });
     item.createSpan({ text: label, cls: "linten-spec-label" });
     const valEl = item.createSpan({ text: val, cls: "linten-spec-val" });
     if (color)
-      valEl.style.color = color;
+      valEl.setCssStyles({ color });
   }
   onClose() {
     const { contentEl } = this;
@@ -1255,7 +1264,7 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
     contentEl.addClass("linten-modal-container");
     const headerEl = contentEl.createDiv({ cls: "linten-modal-header" });
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     const titleRow = titleWrap.createDiv({ cls: "linten-title-row" });
     titleRow.createEl("h2", { text: "Link Health Audit", cls: "linten-modal-title" });
@@ -1266,10 +1275,10 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
     });
     const scoreColor = this.report.healthScore >= 90 ? "#10B981" : this.report.healthScore >= 70 ? "#F59E0B" : "#EF4444";
     const banner = contentEl.createDiv({ cls: "linten-score-banner" });
-    banner.style.borderLeftColor = scoreColor;
+    banner.setCssStyles({ borderLeftColor: scoreColor });
     const scoreRing = banner.createDiv({ cls: "linten-score-ring" });
     const scoreNum = scoreRing.createDiv({ text: `${this.report.healthScore}`, cls: "linten-score-num" });
-    scoreNum.style.color = scoreColor;
+    scoreNum.setCssStyles({ color: scoreColor });
     scoreRing.createSpan({ text: "/100", cls: "linten-score-denom" });
     const desc = banner.createDiv({ cls: "linten-score-desc" });
     const statusPill = desc.createSpan({ cls: `linten-status-pill ${this.report.healthScore >= 90 ? "status-optimal" : "status-warning"}` });
@@ -1304,7 +1313,7 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
     const box = container.createDiv({ cls: "linten-subscore-box" });
     const num = box.createDiv({ text: val, cls: "linten-subscore-num" });
     if (color)
-      num.style.color = color;
+      num.setCssStyles({ color });
     box.createDiv({ text: label, cls: "linten-subscore-label" });
   }
   onClose() {
@@ -1323,7 +1332,7 @@ var LintenBudgetModal = class extends import_obsidian3.Modal {
     contentEl.addClass("linten-modal-container");
     const headerEl = contentEl.createDiv({ cls: "linten-modal-header" });
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     const titleRow = titleWrap.createDiv({ cls: "linten-title-row" });
     titleRow.createEl("h2", { text: "Context Window Budget", cls: "linten-modal-title" });
@@ -1341,7 +1350,7 @@ var LintenBudgetModal = class extends import_obsidian3.Modal {
       item.createSpan({ text: lbl, cls: "linten-spec-label" });
       const v = item.createSpan({ text: val, cls: "linten-spec-val" });
       if (col)
-        v.style.color = col;
+        v.setCssStyles({ color: col });
     };
     createItem("Estimated Tokens", `~${estimatedTokens.toLocaleString()}`, "#5271FF");
     createItem("Word Count", words.toLocaleString());
@@ -1368,8 +1377,10 @@ var LintenBudgetModal = class extends import_obsidian3.Modal {
       body.setText(`${estimatedTokens.toLocaleString()} / ${m.window.toLocaleString()} tokens capacity (${m.desc}).`);
       const meter = item.createDiv({ cls: "linten-meter-track" });
       const fill = meter.createDiv({ cls: "linten-meter-fill" });
-      fill.style.width = `${Math.max(2, Math.min(100, pct))}%`;
-      fill.style.backgroundColor = isSafe ? "#10B981" : "#EF4444";
+      fill.setCssStyles({
+        width: `${Math.max(2, Math.min(100, pct))}%`,
+        backgroundColor: isSafe ? "#10B981" : "#EF4444"
+      });
     }
     const tip = contentEl.createDiv({ cls: "linten-finding-item linten-tip-box" });
     tip.createDiv({
@@ -1401,13 +1412,13 @@ var LintenTemplateModal = class extends import_obsidian3.FuzzySuggestModal {
   }
 };
 var LintenPromptModal = class extends import_obsidian3.Modal {
-  constructor(app, title, placeholder, initialValue, submitLabel, onSubmit) {
+  constructor(app, options) {
     super(app);
-    this.titleText = title;
-    this.placeholder = placeholder;
-    this.initialValue = initialValue;
-    this.submitLabel = submitLabel;
-    this.onSubmit = onSubmit;
+    this.titleText = options.title;
+    this.placeholder = options.placeholder;
+    this.initialValue = options.initialValue || "";
+    this.submitLabel = options.submitLabel || "Submit";
+    this.onSubmit = options.onSubmit;
   }
   onOpen() {
     const { contentEl } = this;
@@ -1415,7 +1426,7 @@ var LintenPromptModal = class extends import_obsidian3.Modal {
     contentEl.addClass("linten-modal-container");
     const headerEl = contentEl.createDiv({ cls: "linten-modal-header" });
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     titleWrap.createEl("h2", { text: this.titleText, cls: "linten-modal-title" });
     let inputValue = this.initialValue;
@@ -1461,7 +1472,7 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
     contentEl.addClass("linten-modal-container");
     const headerEl = contentEl.createDiv({ cls: "linten-modal-header" });
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
-    logoBadge.innerHTML = LINTEN_LOGO_SVG;
+    (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     titleWrap.createEl("h2", { text: "Linten Compliance Badge", cls: "linten-modal-title" });
     const cleanDomain = this.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").trim() || "loopstates.com";
@@ -1477,12 +1488,13 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
     const snippetBox = contentEl.createDiv({ cls: "linten-finding-item" });
     snippetBox.createDiv({ cls: "linten-finding-head", text: "Markdown Badge Code:" });
     const codeEl = snippetBox.createEl("code", { text: mdSnippet });
-    codeEl.style.fontSize = "0.78rem";
+    codeEl.setCssStyles({ fontSize: "0.78rem" });
     const actions = contentEl.createDiv({ cls: "linten-modal-actions" });
     const btnCopyMd = actions.createEl("button", { text: "Copy Markdown", cls: "linten-action-btn mod-cta" });
-    btnCopyMd.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(mdSnippet);
-      this.close();
+    btnCopyMd.addEventListener("click", () => {
+      void navigator.clipboard.writeText(mdSnippet).then(() => {
+        this.close();
+      });
     });
     if (this.onInsertNote) {
       const btnInsert = actions.createEl("button", { text: "Insert into Active Note", cls: "linten-action-btn" });
@@ -1493,14 +1505,16 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
       });
     }
     const btnCopyHtml = actions.createEl("button", { text: "Copy HTML", cls: "linten-action-btn" });
-    btnCopyHtml.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(htmlSnippet);
-      this.close();
+    btnCopyHtml.addEventListener("click", () => {
+      void navigator.clipboard.writeText(htmlSnippet).then(() => {
+        this.close();
+      });
     });
     const btnCopySvg = actions.createEl("button", { text: "Copy SVG URL", cls: "linten-action-btn" });
-    btnCopySvg.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(badgeUrl);
-      this.close();
+    btnCopySvg.addEventListener("click", () => {
+      void navigator.clipboard.writeText(badgeUrl).then(() => {
+        this.close();
+      });
     });
     const footer = contentEl.createDiv({ cls: "linten-modal-footer" });
     const link = footer.createEl("a", { text: "Engineered by Loopstates", href: "https://loopstates.com" });
@@ -1527,27 +1541,27 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
     } catch (e) {
       console.warn("Linten notice: .txt extension already registered by another plugin or system.");
     }
-    this.addRibbonIcon(LINTEN_ICON_ID, "Linten: Validate llms.txt", async () => {
-      await this.validateActiveNote();
+    this.addRibbonIcon(LINTEN_ICON_ID, "Linten: Validate llms.txt", () => {
+      void this.validateActiveNote();
     });
     this.statusBarItemEl = this.addStatusBarItem();
     this.statusBarItemEl.addClass("linten-status-bar");
     this.updateStatusBar(null);
-    this.statusBarItemEl.onClickEvent(async () => {
+    this.statusBarItemEl.onClickEvent(() => {
       if (this.lastAuditResponse) {
         this.openAuditModal(this.lastAuditDocName, this.lastAuditResponse);
       } else {
-        await this.validateActiveNote();
+        void this.validateActiveNote();
       }
     });
     this.addCommand({
-      id: "linten-validate-current-note",
+      id: "validate-current-note",
       name: "Validate current note as llms.txt",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
         if (activeView) {
           if (!checking) {
-            this.validateActiveNote();
+            void this.validateActiveNote();
           }
           return true;
         }
@@ -1555,70 +1569,72 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       }
     });
     this.addCommand({
-      id: "linten-show-last-report",
+      id: "show-last-report",
       name: "View last audit report",
-      callback: async () => {
+      callback: () => {
         if (this.lastAuditResponse) {
           this.openAuditModal(this.lastAuditDocName, this.lastAuditResponse);
         } else {
-          await this.validateActiveNote();
+          void this.validateActiveNote();
         }
       }
     });
     this.addCommand({
-      id: "linten-audit-domain",
+      id: "audit-domain",
       name: "Audit remote website or URL (e.g. stripe.com)",
       callback: () => {
-        new LintenPromptModal(
-          this.app,
-          "Linten: Audit Remote Domain or URL",
-          "stripe.com or https://docs.anthropic.com/llms.txt",
-          "",
-          "Audit URL",
-          async (url) => {
+        new LintenPromptModal(this.app, {
+          title: "Linten: Audit Remote Domain or URL",
+          placeholder: "stripe.com or https://docs.anthropic.com/llms.txt",
+          initialValue: "",
+          submitLabel: "Audit URL",
+          onSubmit: (url) => {
             if (!url)
               return;
-            await this.auditRemoteUrl(url);
-          }
-        ).open();
-      }
-    });
-    this.addCommand({
-      id: "linten-insert-template",
-      name: "Insert industry starter template (30 presets)",
-      callback: () => {
-        new LintenTemplateModal(this.app, async (template) => {
-          var _a;
-          const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-          if (activeView && activeView.editor) {
-            const currentText = activeView.editor.getValue().trim();
-            if (!currentText) {
-              activeView.editor.setValue(template.content);
-              new import_obsidian4.Notice(`Applied "${template.name}" template to active note.`);
-              return;
-            }
-          }
-          const ext = ((_a = activeView == null ? void 0 : activeView.file) == null ? void 0 : _a.extension) === "md" ? "md" : "txt";
-          const baseName = `llms-${template.id}.${ext}`;
-          try {
-            const newFile = await this.createUniqueVaultFile(baseName, template.content);
-            const leaf = this.app.workspace.getLeaf(false);
-            await leaf.openFile(newFile);
-            new import_obsidian4.Notice(`Created "${newFile.name}" with "${template.name}" template.`);
-          } catch (err) {
-            new import_obsidian4.Notice(`Could not create note: ${err.message}`);
+            void this.auditRemoteUrl(url);
           }
         }).open();
       }
     });
     this.addCommand({
-      id: "linten-audit-links",
+      id: "insert-template",
+      name: "Insert industry starter template (30 presets)",
+      callback: () => {
+        new LintenTemplateModal(this.app, (template) => {
+          void (async () => {
+            var _a;
+            const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
+            if (activeView && activeView.editor) {
+              const currentText = activeView.editor.getValue().trim();
+              if (!currentText) {
+                activeView.editor.setValue(template.content);
+                new import_obsidian4.Notice(`Applied "${template.name}" template to active note.`);
+                return;
+              }
+            }
+            const ext = ((_a = activeView == null ? void 0 : activeView.file) == null ? void 0 : _a.extension) === "md" ? "md" : "txt";
+            const baseName = `llms-${template.id}.${ext}`;
+            try {
+              const newFile = await this.createUniqueVaultFile(baseName, template.content);
+              const leaf = this.app.workspace.getLeaf(false);
+              await leaf.openFile(newFile);
+              new import_obsidian4.Notice(`Created "${newFile.name}" with "${template.name}" template.`);
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              new import_obsidian4.Notice(`Could not create note: ${msg}`);
+            }
+          })();
+        }).open();
+      }
+    });
+    this.addCommand({
+      id: "audit-links",
       name: "Audit live link health (100-link probe)",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.auditNoteLinks(activeView.file);
+            void this.auditNoteLinks(activeView.file);
           }
           return true;
         }
@@ -1626,7 +1642,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       }
     });
     this.addCommand({
-      id: "linten-show-ai-budget",
+      id: "show-ai-budget",
       name: "Estimate frontier AI context budget",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
@@ -1641,31 +1657,30 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       }
     });
     this.addCommand({
-      id: "linten-generate-starter",
+      id: "generate-starter",
       name: "Generate starter llms.txt from website",
       callback: () => {
-        new LintenPromptModal(
-          this.app,
-          "Linten: Scaffold Starter llms.txt",
-          "stripe.com or loopstates.com",
-          "",
-          "Generate Starter",
-          async (domain) => {
+        new LintenPromptModal(this.app, {
+          title: "Linten: Scaffold Starter llms.txt",
+          placeholder: "stripe.com or loopstates.com",
+          initialValue: "",
+          submitLabel: "Generate Starter",
+          onSubmit: (domain) => {
             if (!domain)
               return;
-            await this.generateStarterFromDomain(domain);
+            void this.generateStarterFromDomain(domain);
           }
-        ).open();
+        }).open();
       }
     });
     this.addCommand({
-      id: "linten-synthesize-full",
+      id: "synthesize-full",
       name: "Synthesize companion llms-full.txt from links",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.synthesizeFull(activeView.file);
+            void this.synthesizeFull(activeView.file);
           }
           return true;
         }
@@ -1673,7 +1688,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       }
     });
     this.addCommand({
-      id: "linten-format-spec",
+      id: "format-spec",
       name: "Format note to canonical llms.txt AST conventions",
       editorCallback: (editor) => {
         const text = editor.getValue();
@@ -1683,7 +1698,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       }
     });
     this.addCommand({
-      id: "linten-generate-badge",
+      id: "generate-badge",
       name: "Generate README / Note compliance badge",
       callback: () => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
@@ -1706,13 +1721,13 @@ ${snippet}
       }
     });
     this.addCommand({
-      id: "linten-export-report",
+      id: "export-report",
       name: "Export compliance audit report (.md or .json)",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
         if (activeView && activeView.file) {
           if (!checking) {
-            this.exportReportForActiveFile(activeView.file);
+            void this.exportReportForActiveFile(activeView.file);
           }
           return true;
         }
@@ -1780,7 +1795,7 @@ ${snippet}
     if (score !== null) {
       const color = score >= 90 ? "#10B981" : score >= 70 ? "#F59E0B" : "#EF4444";
       this.statusBarItemEl.setText(`Linten: ${score}/100`);
-      this.statusBarItemEl.style.color = color;
+      this.statusBarItemEl.setCssStyles({ color });
       const report = (_a = response == null ? void 0 : response.report) == null ? void 0 : _a.scores;
       const spec = (_b = response == null ? void 0 : response.specialist) == null ? void 0 : _b.metrics;
       let tooltip = `Linten llms.txt Validator
@@ -1799,7 +1814,7 @@ Score: ${score}/100
       this.statusBarItemEl.setAttribute("title", tooltip);
     } else {
       this.statusBarItemEl.setText("Linten");
-      this.statusBarItemEl.style.color = "#5271FF";
+      this.statusBarItemEl.setCssStyles({ color: "#5271FF" });
       this.statusBarItemEl.setAttribute("aria-label", "Linten: llms.txt Validator by Loopstates. Click to audit.");
       this.statusBarItemEl.setAttribute("title", "Linten: llms.txt Validator by Loopstates. Click to audit.");
     }
@@ -1820,7 +1835,7 @@ Score: ${score}/100
       return;
     }
     this.statusBarItemEl.setText("Linten: Auditing...");
-    this.statusBarItemEl.style.color = "#5271FF";
+    this.statusBarItemEl.setCssStyles({ color: "#5271FF" });
     new import_obsidian4.Notice("Linten: Auditing llms.txt...");
     try {
       const response = await validateNoteContent(this.settings.apiUrl, content);
@@ -1835,15 +1850,16 @@ Score: ${score}/100
       }
     } catch (err) {
       this.statusBarItemEl.setText("Linten: Error");
-      this.statusBarItemEl.style.color = "#EF4444";
-      new import_obsidian4.Notice(`Linten Validation failed: ${err.message || "Network error"}`);
+      this.statusBarItemEl.setCssStyles({ color: "#EF4444" });
+      const msg = err instanceof Error ? err.message : "Network error";
+      new import_obsidian4.Notice(`Linten Validation failed: ${msg}`);
     }
   }
   async auditRemoteUrl(targetUrl) {
     var _a, _b, _c;
     new import_obsidian4.Notice(`Linten: Auditing remote URL ${targetUrl}...`);
     this.statusBarItemEl.setText("Linten: Auditing...");
-    this.statusBarItemEl.style.color = "#5271FF";
+    this.statusBarItemEl.setCssStyles({ color: "#5271FF" });
     try {
       const response = await auditRemoteUrlNote(this.settings.apiUrl, targetUrl);
       const score = (_c = (_b = (_a = response.report) == null ? void 0 : _a.scores) == null ? void 0 : _b.overall) != null ? _c : 100;
@@ -1854,45 +1870,48 @@ Score: ${score}/100
       new import_obsidian4.Notice(`Linten: Remote audit complete for ${targetUrl} (Score: ${score}/100)`);
     } catch (err) {
       this.statusBarItemEl.setText("Linten: Error");
-      this.statusBarItemEl.style.color = "#EF4444";
-      new import_obsidian4.Notice(`Remote Audit failed: ${err.message}`);
+      this.statusBarItemEl.setCssStyles({ color: "#EF4444" });
+      const msg = err instanceof Error ? err.message : "Network error";
+      new import_obsidian4.Notice(`Remote Audit failed: ${msg}`);
     }
   }
   openAuditModal(docName, response, file) {
-    new LintenAuditModal(this.app, docName, response, async (action) => {
-      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-      const targetFile = file || (activeView == null ? void 0 : activeView.file);
-      if (action === "audit-links") {
-        if (targetFile) {
-          await this.auditNoteLinks(targetFile);
-        } else {
-          new import_obsidian4.Notice("Open an active note to audit links.");
+    new LintenAuditModal(this.app, docName, response, (action) => {
+      void (async () => {
+        const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
+        const targetFile = file || (activeView == null ? void 0 : activeView.file);
+        if (action === "audit-links") {
+          if (targetFile) {
+            await this.auditNoteLinks(targetFile);
+          } else {
+            new import_obsidian4.Notice("Open an active note to audit links.");
+          }
+        } else if (action === "budget") {
+          if (activeView) {
+            new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
+          } else {
+            new import_obsidian4.Notice("Open an active note to estimate budget.");
+          }
+        } else if (action === "format") {
+          if (activeView) {
+            activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
+            new import_obsidian4.Notice("Note formatted according to canonical llms.txt conventions.");
+          }
+        } else if (action === "export") {
+          if (targetFile) {
+            await this.exportReportForActiveFile(targetFile);
+          } else {
+            await this.exportReportStandalone(docName, response);
+          }
+        } else if (action === "badge") {
+          const domain = docName.replace(/^https?:\/\//i, "").replace(/\/.*$/, "") || "loopstates.com";
+          new LintenBadgeModal(this.app, domain).open();
+        } else if (action === "synthesize") {
+          if (targetFile) {
+            await this.synthesizeFull(targetFile);
+          }
         }
-      } else if (action === "budget") {
-        if (activeView) {
-          new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
-        } else {
-          new import_obsidian4.Notice("Open an active note to estimate budget.");
-        }
-      } else if (action === "format") {
-        if (activeView) {
-          activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
-          new import_obsidian4.Notice("Note formatted according to canonical llms.txt conventions.");
-        }
-      } else if (action === "export") {
-        if (targetFile) {
-          await this.exportReportForActiveFile(targetFile);
-        } else {
-          await this.exportReportStandalone(docName, response);
-        }
-      } else if (action === "badge") {
-        const domain = docName.replace(/^https?:\/\//i, "").replace(/\/.*$/, "") || "loopstates.com";
-        new LintenBadgeModal(this.app, domain).open();
-      } else if (action === "synthesize") {
-        if (targetFile) {
-          await this.synthesizeFull(targetFile);
-        }
-      }
+      })();
     }).open();
   }
   async auditNoteLinks(file) {
@@ -1906,7 +1925,8 @@ Score: ${score}/100
       const report = await checkNoteLinks(this.settings.apiUrl, content);
       new LintenLinkAuditModal(this.app, file.name, report).open();
     } catch (err) {
-      new import_obsidian4.Notice(`Linten Link Auditor error: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      new import_obsidian4.Notice(`Linten Link Auditor error: ${msg}`);
     }
   }
   async generateStarterFromDomain(domain) {
@@ -1922,7 +1942,8 @@ Score: ${score}/100
         new import_obsidian4.Notice(`Created "${newFile.name}" successfully.`);
       }
     } catch (err) {
-      new import_obsidian4.Notice(`Scaffolding failed: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      new import_obsidian4.Notice(`Scaffolding failed: ${msg}`);
     }
   }
   async synthesizeFull(file) {
@@ -1952,7 +1973,8 @@ Score: ${score}/100
         );
       }
     } catch (err) {
-      new import_obsidian4.Notice(`Synthesizer failed: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      new import_obsidian4.Notice(`Synthesizer failed: ${msg}`);
     }
   }
   async exportReportForActiveFile(file) {
@@ -1970,7 +1992,8 @@ Score: ${score}/100
       await leaf.openFile(reportFile);
       new import_obsidian4.Notice(`Exported compliance audit report to "${reportFile.name}".`);
     } catch (err) {
-      new import_obsidian4.Notice(`Failed to export report: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      new import_obsidian4.Notice(`Failed to export report: ${msg}`);
     }
   }
   async exportReportStandalone(docName, response) {
@@ -1983,7 +2006,8 @@ Score: ${score}/100
       await leaf.openFile(reportFile);
       new import_obsidian4.Notice(`Exported compliance audit report to "${reportFile.name}".`);
     } catch (err) {
-      new import_obsidian4.Notice(`Failed to export report: ${err.message}`);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      new import_obsidian4.Notice(`Failed to export report: ${msg}`);
     }
   }
   buildMarkdownReport(docName, response) {
