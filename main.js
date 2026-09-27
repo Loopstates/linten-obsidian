@@ -70,7 +70,7 @@ var LintenSettingTab = class extends import_obsidian.PluginSettingTab {
     const attribution = containerEl.createDiv({ cls: "linten-settings-attribution" });
     attribution.createSpan({ text: "A product by " });
     const link = attribution.createEl("a", {
-      text: "Loopstates (loopstates.com)",
+      text: "Loopstates",
       href: "https://loopstates.com"
     });
     link.setAttr("target", "_blank");
@@ -1074,10 +1074,10 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     const titleRow = titleWrap.createDiv({ cls: "linten-title-row" });
-    titleRow.createEl("h2", { text: "Linten Compliance Audit", cls: "linten-modal-title" });
+    titleRow.createEl("h2", { text: "Linten Audit", cls: "linten-modal-title" });
     titleRow.createSpan({ text: this.fileName, cls: "linten-doc-badge" });
     titleWrap.createEl("p", {
-      text: "LLMs.txt Spec Validation & Structure Audit",
+      text: "llms.txt validation & diagnostics",
       cls: "linten-modal-subtitle"
     });
     const report = this.response.report;
@@ -1102,33 +1102,54 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     this.createScoreMeter(scoreGrid, "Structure", scores.structure);
     this.createScoreMeter(scoreGrid, "Link Health", scores.links);
     this.createScoreMeter(scoreGrid, "Best Practices", scores.bestPractices);
+    const isFullFile = this.fileName.toLowerCase().includes("-full") || this.fileName.toLowerCase().includes("_full");
     if (spec) {
       const specBar = contentEl.createDiv({ cls: "linten-spec-bar" });
       this.createSpecItem(specBar, "Token Load", `~${spec.estimatedTokens.toLocaleString()} tok`, "#5271FF");
       this.createSpecItem(specBar, "Word Count", `${spec.wordCount.toLocaleString()} words`);
       this.createSpecItem(specBar, "Manifest Density", ((_c = spec.tokenStatus) == null ? void 0 : _c.toUpperCase()) || "OPTIMAL", "#10B981");
       if (parity) {
-        this.createSpecItem(specBar, "Companion Parity", parity.hasCompanion ? "PRESENT" : "MISSING", parity.hasCompanion ? "#10B981" : "#F59E0B");
+        const parityLabel = isFullFile ? "COMPANION" : parity.hasCompanion ? "PRESENT" : "MISSING";
+        const parityColor = isFullFile || parity.hasCompanion ? "#10B981" : "#F59E0B";
+        this.createSpecItem(specBar, "Companion Parity", parityLabel, parityColor);
       }
     }
-    if (parity && !parity.hasCompanion) {
-      const companionBox = contentEl.createDiv({ cls: "linten-companion-hero" });
-      const compContent = companionBox.createDiv({ cls: "linten-companion-content" });
-      compContent.createEl("strong", { text: "Companion Manifest Missing (llms-full.txt)" });
-      compContent.createEl("p", {
-        text: "An un-truncated llms-full.txt provides the complete documentation corpus alongside this manifest."
-      });
-      if (this.onAction) {
-        const actionRow = companionBox.createDiv({ cls: "linten-companion-action" });
-        const btn = actionRow.createEl("button", {
-          cls: "linten-btn-synthesize",
-          text: "Synthesize Companion llms-full.txt"
+    if (!isFullFile && parity) {
+      if (!parity.hasCompanion) {
+        const companionBox = contentEl.createDiv({ cls: "linten-companion-hero" });
+        const compContent = companionBox.createDiv({ cls: "linten-companion-content" });
+        compContent.createEl("strong", { text: "Companion Manifest Missing (llms-full.txt)" });
+        compContent.createEl("p", {
+          text: "An un-truncated llms-full.txt provides the complete documentation corpus alongside this manifest."
         });
-        btn.addEventListener("click", () => {
+        if (this.onAction) {
+          const actionRow = companionBox.createDiv({ cls: "linten-companion-action" });
+          const btn = actionRow.createEl("button", {
+            cls: "linten-action-btn",
+            text: "Synthesize Companion llms-full.txt"
+          });
+          btn.addEventListener("click", () => {
+            var _a2;
+            this.close();
+            (_a2 = this.onAction) == null ? void 0 : _a2.call(this, "synthesize");
+          });
+        }
+      } else {
+        const subtleBox = contentEl.createDiv({ cls: "linten-companion-subtle-note" });
+        subtleBox.createSpan({
+          text: "\u2713 Companion manifest (llms-full.txt) is present. If you added new links, you can "
+        });
+        const resynthLink = subtleBox.createEl("a", {
+          text: "re-synthesize it here",
+          cls: "linten-inline-action"
+        });
+        resynthLink.addEventListener("click", (e) => {
           var _a2;
+          e.preventDefault();
           this.close();
           (_a2 = this.onAction) == null ? void 0 : _a2.call(this, "synthesize");
         });
+        subtleBox.createSpan({ text: "." });
       }
     }
     contentEl.createEl("h3", { text: "Audit Findings & Actionable Recommendations", cls: "linten-findings-title" });
@@ -1171,15 +1192,15 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     }
     if (this.onAction) {
       const actionsBar = contentEl.createDiv({ cls: "linten-modal-actions" });
-      const btnSynthesize = actionsBar.createEl("button", { cls: "linten-action-btn mod-cta" });
-      btnSynthesize.setText("Synthesize Companion");
+      const btnSynthesize = actionsBar.createEl("button", { cls: "linten-action-btn" });
+      btnSynthesize.setText((parity == null ? void 0 : parity.hasCompanion) ? "Re-synthesize" : "Synthesize Companion");
       btnSynthesize.addEventListener("click", () => {
         var _a2;
         this.close();
         (_a2 = this.onAction) == null ? void 0 : _a2.call(this, "synthesize");
       });
       const btnLinks = actionsBar.createEl("button", {
-        cls: `linten-action-btn ${scores.links < 100 ? "mod-warning" : ""}`
+        cls: "linten-action-btn"
       });
       const brokenCount = findings.filter((f) => {
         var _a2;
@@ -1222,7 +1243,7 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
     }
     const footer = contentEl.createDiv({ cls: "linten-modal-footer" });
     const footerLink = footer.createEl("a", {
-      text: "Engineered by Loopstates (loopstates.com)",
+      text: "Engineered by Loopstates",
       href: "https://loopstates.com"
     });
     footerLink.setAttr("target", "_blank");
@@ -1253,10 +1274,11 @@ var LintenAuditModal = class extends import_obsidian3.Modal {
   }
 };
 var LintenLinkAuditModal = class extends import_obsidian3.Modal {
-  constructor(app, fileName, report) {
+  constructor(app, fileName, report, onBack) {
     super(app);
     this.fileName = fileName;
     this.report = report;
+    this.onBack = onBack;
   }
   onOpen() {
     const { contentEl } = this;
@@ -1270,7 +1292,7 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
     titleRow.createEl("h2", { text: "Link Health Audit", cls: "linten-modal-title" });
     titleRow.createSpan({ text: this.fileName, cls: "linten-doc-badge" });
     titleWrap.createEl("p", {
-      text: "Concurrent 100-link reachability probe verifying public endpoints and redirect chains",
+      text: "Verify endpoint reachability and redirects",
       cls: "linten-modal-subtitle"
     });
     const scoreColor = this.report.healthScore >= 90 ? "#10B981" : this.report.healthScore >= 70 ? "#F59E0B" : "#EF4444";
@@ -1305,6 +1327,15 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
         body.createDiv({ text: `\u21B3 Redirects to canonical: ${item.finalUrl}`, cls: "linten-redirect-notice" });
       }
     }
+    if (this.onBack) {
+      const actions = contentEl.createDiv({ cls: "linten-modal-actions" });
+      const btnBack = actions.createEl("button", { text: "\u2190 Back to Audit Report", cls: "linten-action-btn" });
+      btnBack.addEventListener("click", () => {
+        var _a;
+        this.close();
+        (_a = this.onBack) == null ? void 0 : _a.call(this);
+      });
+    }
     const footer = contentEl.createDiv({ cls: "linten-modal-footer" });
     const link = footer.createEl("a", { text: "Engineered by Loopstates", href: "https://loopstates.com" });
     link.setAttr("target", "_blank");
@@ -1321,10 +1352,11 @@ var LintenLinkAuditModal = class extends import_obsidian3.Modal {
   }
 };
 var LintenBudgetModal = class extends import_obsidian3.Modal {
-  constructor(app, fileName, noteContent) {
+  constructor(app, fileName, noteContent, onBack) {
     super(app);
     this.fileName = fileName;
     this.noteContent = noteContent;
+    this.onBack = onBack;
   }
   onOpen() {
     const { contentEl } = this;
@@ -1387,6 +1419,15 @@ var LintenBudgetModal = class extends import_obsidian3.Modal {
       cls: "linten-finding-body",
       text: "Tip: Spec v2 recommends keeping root llms.txt under 10,000 tokens for zero-cache latency across reasoning agents."
     });
+    if (this.onBack) {
+      const actions = contentEl.createDiv({ cls: "linten-modal-actions" });
+      const btnBack = actions.createEl("button", { text: "\u2190 Back to Audit Report", cls: "linten-action-btn" });
+      btnBack.addEventListener("click", () => {
+        var _a;
+        this.close();
+        (_a = this.onBack) == null ? void 0 : _a.call(this);
+      });
+    }
     const footer = contentEl.createDiv({ cls: "linten-modal-footer" });
     const link = footer.createEl("a", { text: "Engineered by Loopstates", href: "https://loopstates.com" });
     link.setAttr("target", "_blank");
@@ -1461,10 +1502,11 @@ var LintenPromptModal = class extends import_obsidian3.Modal {
   }
 };
 var LintenBadgeModal = class extends import_obsidian3.Modal {
-  constructor(app, domain, onInsertNote) {
+  constructor(app, domain, onInsertNote, onBack) {
     super(app);
     this.domain = domain;
     this.onInsertNote = onInsertNote;
+    this.onBack = onBack;
   }
   onOpen() {
     const { contentEl } = this;
@@ -1474,26 +1516,62 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
     const logoBadge = headerEl.createDiv({ cls: "linten-logo-badge" });
     (0, import_obsidian3.setIcon)(logoBadge, LINTEN_ICON_ID);
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
-    titleWrap.createEl("h2", { text: "Linten Compliance Badge", cls: "linten-modal-title" });
-    const cleanDomain = this.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").trim() || "loopstates.com";
-    const badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(cleanDomain)}`;
-    const mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${cleanDomain})`;
-    const htmlSnippet = `<a href="https://${cleanDomain}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+    titleWrap.createEl("h2", { text: "Linten Badge", cls: "linten-modal-title" });
+    titleWrap.createEl("p", {
+      text: "Dynamic live validation badge for your website or README",
+      cls: "linten-modal-subtitle"
+    });
+    let initialDomain = this.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").trim();
+    if (!initialDomain || initialDomain.endsWith(".txt") || initialDomain.endsWith(".md")) {
+      initialDomain = "loopstates.com";
+    }
+    let currentDomain = initialDomain;
+    let badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(currentDomain)}`;
+    let mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${currentDomain})`;
+    let htmlSnippet = `<a href="https://${currentDomain}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+    const inputContainer = contentEl.createDiv({ cls: "linten-badge-input-container" });
+    inputContainer.createEl("label", { text: "Target Live Website or Domain:", cls: "linten-badge-input-label" });
+    const domainInput = inputContainer.createEl("input", {
+      type: "text",
+      value: currentDomain,
+      cls: "linten-badge-input-field"
+    });
+    domainInput.placeholder = "e.g. yourdomain.com or https://yourdomain.com";
     const desc = contentEl.createDiv({ cls: "linten-badge-desc" });
     desc.createEl("p", {
       text: "Dynamic SVG badge that automatically validates your live /llms.txt AST score on every load."
     });
     const previewBox = contentEl.createDiv({ cls: "linten-badge-preview" });
-    previewBox.createEl("img", { attr: { src: badgeUrl, alt: "Linten Badge Preview" } });
+    const previewImg = previewBox.createEl("img", { attr: { src: badgeUrl, alt: "Linten Badge Preview" } });
     const snippetBox = contentEl.createDiv({ cls: "linten-finding-item" });
     snippetBox.createDiv({ cls: "linten-finding-head", text: "Markdown Badge Code:" });
     const codeEl = snippetBox.createEl("code", { text: mdSnippet });
     codeEl.setCssStyles({ fontSize: "0.78rem" });
+    const updateSnippets = (raw) => {
+      const clean = raw.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").trim() || "example.com";
+      currentDomain = clean;
+      badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(clean)}`;
+      mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${clean})`;
+      htmlSnippet = `<a href="https://${clean}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+      previewImg.setAttr("src", badgeUrl);
+      codeEl.setText(mdSnippet);
+    };
+    domainInput.addEventListener("input", () => {
+      updateSnippets(domainInput.value);
+    });
     const actions = contentEl.createDiv({ cls: "linten-modal-actions" });
-    const btnCopyMd = actions.createEl("button", { text: "Copy Markdown", cls: "linten-action-btn mod-cta" });
+    if (this.onBack) {
+      const btnBack = actions.createEl("button", { text: "\u2190 Back to Audit", cls: "linten-action-btn" });
+      btnBack.addEventListener("click", () => {
+        var _a;
+        this.close();
+        (_a = this.onBack) == null ? void 0 : _a.call(this);
+      });
+    }
+    const btnCopyMd = actions.createEl("button", { text: "Copy Markdown", cls: "linten-action-btn" });
     btnCopyMd.addEventListener("click", () => {
       void navigator.clipboard.writeText(mdSnippet).then(() => {
-        this.close();
+        new Notice("Linten: Markdown badge copied to clipboard.");
       });
     });
     if (this.onInsertNote) {
@@ -1507,13 +1585,13 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
     const btnCopyHtml = actions.createEl("button", { text: "Copy HTML", cls: "linten-action-btn" });
     btnCopyHtml.addEventListener("click", () => {
       void navigator.clipboard.writeText(htmlSnippet).then(() => {
-        this.close();
+        new Notice("Linten: HTML badge copied to clipboard.");
       });
     });
     const btnCopySvg = actions.createEl("button", { text: "Copy SVG URL", cls: "linten-action-btn" });
     btnCopySvg.addEventListener("click", () => {
       void navigator.clipboard.writeText(badgeUrl).then(() => {
-        this.close();
+        new Notice("Linten: SVG URL copied to clipboard.");
       });
     });
     const footer = contentEl.createDiv({ cls: "linten-modal-footer" });
@@ -1541,8 +1619,15 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
     } catch (e) {
       console.warn("Linten notice: .txt extension already registered by another plugin or system.");
     }
-    this.addRibbonIcon(LINTEN_ICON_ID, "Linten: Validate llms.txt", () => {
-      void this.validateActiveNote();
+    this.addRibbonIcon(LINTEN_ICON_ID, "Linten: Validate llms.txt", async () => {
+      var _a;
+      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
+      if (!activeView || !activeView.file || !this.isLlmsFile(activeView.file)) {
+        const currentName = ((_a = activeView == null ? void 0 : activeView.file) == null ? void 0 : _a.name) ? `"${activeView.file.name}"` : "Active note";
+        new import_obsidian4.Notice(`Linten: ${currentName} is not an llms.txt manifest. Please open an llms.txt or llms-full.txt file to validate.`);
+        return;
+      }
+      await this.validateFile(activeView.file, true);
     });
     this.statusBarItemEl = this.addStatusBarItem();
     this.statusBarItemEl.addClass("linten-status-bar");
@@ -1559,7 +1644,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       name: "Validate current note as llms.txt",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-        if (activeView) {
+        if ((activeView == null ? void 0 : activeView.file) && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.validateActiveNote();
           }
@@ -1678,7 +1763,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       name: "Synthesize companion llms-full.txt from links",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-        if (activeView && activeView.file) {
+        if ((activeView == null ? void 0 : activeView.file) && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.synthesizeFull(activeView.file);
           }
@@ -1725,7 +1810,7 @@ ${snippet}
       name: "Export compliance audit report (.md or .json)",
       checkCallback: (checking) => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-        if (activeView && activeView.file) {
+        if ((activeView == null ? void 0 : activeView.file) && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.exportReportForActiveFile(activeView.file);
           }
@@ -1736,11 +1821,7 @@ ${snippet}
     });
     this.registerEvent(
       this.app.workspace.on("editor-menu", (menu, editor, view) => {
-        if (!view.file)
-          return;
-        const fname = view.file.name.toLowerCase();
-        const isLlms = fname.includes("llms") || fname.includes(".txt") || fname.includes(".md");
-        if (!isLlms)
+        if (!view.file || !this.isLlmsFile(view.file))
           return;
         menu.addSeparator();
         menu.addItem((item) => {
@@ -1789,7 +1870,33 @@ ${snippet}
   }
   isLlmsFile(file) {
     const name = file.name.toLowerCase();
-    return name === "llms.txt" || name === "llms-full.txt" || name === "llms.md" || name === "llms-full.md" || name.startsWith("llms-") || name.includes("llms");
+    return name === "llms.txt" || name === "llms-full.txt" || name === "llms.md" || name === "llms-full.md" || name === "llms-small.txt" || name === "llms-small.md" || name.startsWith("llms-") || name.startsWith("llms_");
+  }
+  checkVaultHasCompanion(file) {
+    const nameLower = file.name.toLowerCase();
+    if (nameLower.includes("-full") || nameLower.includes("_full")) {
+      return true;
+    }
+    if (file.parent && file.parent.children) {
+      for (const child of file.parent.children) {
+        if (child instanceof import_obsidian4.TFile && child.path !== file.path) {
+          const childName = child.name.toLowerCase();
+          if (childName === "llms-full.txt" || childName === "llms-full.md" || childName.startsWith(`${file.basename}-full`) || childName.startsWith(`${file.basename}_full`) || childName.includes("-full") || childName.includes("_full")) {
+            return true;
+          }
+        }
+      }
+    }
+    const allFiles = this.app.vault.getFiles();
+    for (const f of allFiles) {
+      if (f.path !== file.path) {
+        const fname = f.name.toLowerCase();
+        if (fname === "llms-full.txt" || fname === "llms-full.md" || fname.startsWith("llms-full") || fname.startsWith("llms_full")) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
   updateStatusBar(score, response) {
     var _a, _b;
@@ -1823,13 +1930,21 @@ Score: ${score}/100
   async validateActiveNote() {
     const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
     if (!activeView || !activeView.file) {
-      new import_obsidian4.Notice("No active markdown note to validate.");
+      new import_obsidian4.Notice("No active note to validate.");
+      return;
+    }
+    if (!this.isLlmsFile(activeView.file)) {
+      new import_obsidian4.Notice(`Linten: "${activeView.file.name}" is not an llms.txt manifest. Please open an llms.txt or llms-full.txt note to audit.`);
       return;
     }
     await this.validateFile(activeView.file, true);
   }
   async validateFile(file, openModal = true) {
     var _a, _b, _c;
+    if (!this.isLlmsFile(file)) {
+      new import_obsidian4.Notice(`Linten: "${file.name}" is not an llms.txt manifest. Please open an llms.txt or llms-full.txt note to audit.`);
+      return;
+    }
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new import_obsidian4.Notice("Note is empty.");
@@ -1837,9 +1952,21 @@ Score: ${score}/100
     }
     this.statusBarItemEl.setText("Linten: Auditing...");
     this.statusBarItemEl.setCssStyles({ color: "#5271FF" });
-    new import_obsidian4.Notice("Linten: Auditing llms.txt...");
+    new import_obsidian4.Notice(`Linten: Auditing ${file.name}...`);
     try {
       const response = await validateNoteContent(this.settings.apiUrl, content);
+      if (!response.specialist) {
+        response.specialist = {};
+      }
+      if (!response.specialist.dualFileParity) {
+        response.specialist.dualFileParity = {
+          hasCompanion: false,
+          companionRecommendation: ""
+        };
+      }
+      if (this.checkVaultHasCompanion(file)) {
+        response.specialist.dualFileParity.hasCompanion = true;
+      }
       const score = (_c = (_b = (_a = response.report) == null ? void 0 : _a.scores) == null ? void 0 : _b.overall) != null ? _c : 100;
       this.lastAuditResponse = response;
       this.lastAuditDocName = file.name;
@@ -1877,26 +2004,46 @@ Score: ${score}/100
     }
   }
   openAuditModal(docName, response, file) {
+    const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
+    const targetFile = file || (activeView == null ? void 0 : activeView.file);
+    if (targetFile && this.checkVaultHasCompanion(targetFile)) {
+      if (!response.specialist)
+        response.specialist = {};
+      if (!response.specialist.dualFileParity) {
+        response.specialist.dualFileParity = { hasCompanion: true, companionRecommendation: "" };
+      } else {
+        response.specialist.dualFileParity.hasCompanion = true;
+      }
+    }
     new LintenAuditModal(this.app, docName, response, (action) => {
       void (async () => {
-        const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-        const targetFile = file || (activeView == null ? void 0 : activeView.file);
+        const returnToAudit = () => this.openAuditModal(docName, response, targetFile);
         if (action === "audit-links") {
           if (targetFile) {
-            await this.auditNoteLinks(targetFile);
+            await this.auditNoteLinks(targetFile, returnToAudit);
           } else {
             new import_obsidian4.Notice("Open an active note to audit links.");
           }
         } else if (action === "budget") {
           if (activeView) {
-            new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
+            new LintenBudgetModal(this.app, docName, activeView.editor.getValue(), returnToAudit).open();
           } else {
             new import_obsidian4.Notice("Open an active note to estimate budget.");
           }
         } else if (action === "format") {
           if (activeView) {
-            activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
-            new import_obsidian4.Notice("Note formatted according to canonical llms.txt conventions.");
+            const original = activeView.editor.getValue();
+            const formatted = this.formatMarkdown(original);
+            if (original.trim() === formatted.trim()) {
+              new import_obsidian4.Notice("Linten: Note is already formatted to canonical llms.txt standard (no changes needed).");
+              returnToAudit();
+            } else {
+              activeView.editor.setValue(formatted);
+              new import_obsidian4.Notice("Linten: Formatted note to canonical llms.txt structure (H1, blockquote, H2s, normalized links).");
+              if (targetFile) {
+                await this.validateFile(targetFile, true);
+              }
+            }
           }
         } else if (action === "export") {
           if (targetFile) {
@@ -1905,8 +2052,27 @@ Score: ${score}/100
             await this.exportReportStandalone(docName, response);
           }
         } else if (action === "badge") {
-          const domain = docName.replace(/^https?:\/\//i, "").replace(/\/.*$/, "") || "loopstates.com";
-          new LintenBadgeModal(this.app, domain).open();
+          let detectedDomain = "";
+          if (activeView) {
+            const content = activeView.editor.getValue();
+            const match = content.match(/https?:\/\/([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (match)
+              detectedDomain = match[1];
+          }
+          new LintenBadgeModal(
+            this.app,
+            detectedDomain || "loopstates.com",
+            (snippet) => {
+              if (activeView && activeView.editor) {
+                const cursor = activeView.editor.getCursor();
+                activeView.editor.replaceRange(`
+${snippet}
+`, cursor);
+                new import_obsidian4.Notice("Inserted Linten verification badge into active note.");
+              }
+            },
+            returnToAudit
+          ).open();
         } else if (action === "synthesize") {
           if (targetFile) {
             await this.synthesizeFull(targetFile);
@@ -1915,7 +2081,7 @@ Score: ${score}/100
       })();
     }).open();
   }
-  async auditNoteLinks(file) {
+  async auditNoteLinks(file, onBack) {
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new import_obsidian4.Notice("Note is empty.");
@@ -1924,7 +2090,7 @@ Score: ${score}/100
     new import_obsidian4.Notice("Linten: Probing link health concurrently...");
     try {
       const report = await checkNoteLinks(this.settings.apiUrl, content);
-      new LintenLinkAuditModal(this.app, file.name, report).open();
+      new LintenLinkAuditModal(this.app, file.name, report, onBack).open();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       new import_obsidian4.Notice(`Linten Link Auditor error: ${msg}`);
@@ -1948,9 +2114,19 @@ Score: ${score}/100
     }
   }
   async synthesizeFull(file) {
+    var _a, _b;
+    if (!this.isLlmsFile(file)) {
+      new import_obsidian4.Notice(`Linten: "${file.name}" is not an llms.txt manifest.`);
+      return;
+    }
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new import_obsidian4.Notice("Note is empty.");
+      return;
+    }
+    const hasLinks = /- \[[^\]]+\]\([^)]+\)/.test(content) || /\[[^\]]+\]\([^)]+\)/.test(content);
+    if (!hasLinks) {
+      new import_obsidian4.Notice("Linten: No markdown links found in this manifest to synthesize.");
       return;
     }
     new import_obsidian4.Notice("Linten: Synthesizing companion llms-full.txt from links...");
@@ -1964,6 +2140,9 @@ Score: ${score}/100
           await this.app.vault.modify(targetFile, res.fullContent);
         } else {
           targetFile = await this.app.vault.create(fullFileName, res.fullContent);
+        }
+        if ((_b = (_a = this.lastAuditResponse) == null ? void 0 : _a.specialist) == null ? void 0 : _b.dualFileParity) {
+          this.lastAuditResponse.specialist.dualFileParity.hasCompanion = true;
         }
         if (targetFile instanceof import_obsidian4.TFile) {
           const leaf = this.app.workspace.getLeaf(false);
@@ -2121,22 +2300,37 @@ Score: ${score}/100
     const lines = raw.split("\n");
     let title = "";
     let summary = "";
+    let foundFirstH1 = false;
+    let foundSummary = false;
     const sections = [];
-    let currentSection = "Core Documentation";
-    const sectionMap = {};
+    let currentSection = null;
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!title && /^#\s+(.+)$/.test(trimmed)) {
+      if (!trimmed && !foundFirstH1)
+        continue;
+      if (!foundFirstH1 && /^#\s+(.+)$/.test(trimmed)) {
         title = trimmed.replace(/^#\s+/, "").trim();
-      } else if (!summary && /^>\s*(.+)$/.test(trimmed)) {
+        foundFirstH1 = true;
+        continue;
+      }
+      if (foundFirstH1 && /^#\s+(.+)$/.test(trimmed)) {
+        const secTitle = trimmed.replace(/^#\s+/, "").trim();
+        currentSection = { title: secTitle, items: [] };
+        sections.push(currentSection);
+        continue;
+      }
+      if (foundFirstH1 && !foundSummary && sections.length === 0 && /^>\s*(.+)$/.test(trimmed)) {
         summary = trimmed.replace(/^>\s*/, "").trim();
-      } else if (/^##\s+(.+)$/.test(trimmed)) {
-        currentSection = trimmed.replace(/^##\s+/, "").trim();
-        if (!sectionMap[currentSection]) {
-          sectionMap[currentSection] = [];
-          sections.push({ name: currentSection, links: sectionMap[currentSection] });
-        }
-      } else if (/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/.test(trimmed)) {
+        foundSummary = true;
+        continue;
+      }
+      if (/^##\s+(.+)$/.test(trimmed)) {
+        const secTitle = trimmed.replace(/^##\s+/, "").trim();
+        currentSection = { title: secTitle, items: [] };
+        sections.push(currentSection);
+        continue;
+      }
+      if (/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/.test(trimmed)) {
         const match = trimmed.match(/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/);
         if (match) {
           const anchor = match[1].trim();
@@ -2146,16 +2340,31 @@ Score: ${score}/100
             desc = desc.substring(1).trim();
           }
           const formattedLink = desc ? `- [${anchor}](${url}): ${desc}` : `- [${anchor}](${url})`;
-          if (!sectionMap[currentSection]) {
-            sectionMap[currentSection] = [];
-            sections.push({ name: currentSection, links: sectionMap[currentSection] });
+          if (!currentSection) {
+            currentSection = { title: "Documentation", items: [] };
+            sections.push(currentSection);
           }
-          sectionMap[currentSection].push(formattedLink);
+          currentSection.items.push(formattedLink);
+          continue;
+        }
+      }
+      if (trimmed) {
+        if (!currentSection) {
+          if (!summary && foundFirstH1) {
+            summary = trimmed;
+            foundSummary = true;
+          } else {
+            currentSection = { title: "Documentation", items: [] };
+            sections.push(currentSection);
+            currentSection.items.push(trimmed);
+          }
+        } else {
+          currentSection.items.push(trimmed);
         }
       }
     }
     const output = [];
-    output.push(`# ${title || "Project Documentation"}`);
+    output.push(`# ${title || "Documentation"}`);
     output.push("");
     if (summary) {
       output.push(`> ${summary}`);
@@ -2166,10 +2375,10 @@ Score: ${score}/100
       output.push("");
     } else {
       for (const sec of sections) {
-        output.push(`## ${sec.name}`);
+        output.push(`## ${sec.title}`);
         output.push("");
-        for (const l of sec.links) {
-          output.push(l);
+        for (const item of sec.items) {
+          output.push(item);
         }
         output.push("");
       }

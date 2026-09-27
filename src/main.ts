@@ -50,8 +50,14 @@ export default class LintenPlugin extends Plugin {
     }
 
     // 3. Ribbon Icon using Authentic Linten Logo
-    this.addRibbonIcon(LINTEN_ICON_ID, 'Linten: Validate llms.txt', () => {
-      void this.validateActiveNote();
+    this.addRibbonIcon(LINTEN_ICON_ID, 'Linten: Validate llms.txt', async () => {
+      const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!activeView || !activeView.file || !this.isLlmsFile(activeView.file)) {
+        const currentName = activeView?.file?.name ? `"${activeView.file.name}"` : 'Active note';
+        new Notice(`Linten: ${currentName} is not an llms.txt manifest. Please open an llms.txt or llms-full.txt file to validate.`);
+        return;
+      }
+      await this.validateFile(activeView.file, true);
     });
 
     // 4. Status Bar Item
@@ -72,7 +78,7 @@ export default class LintenPlugin extends Plugin {
       name: 'Validate current note as llms.txt',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView) {
+        if (activeView?.file && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.validateActiveNote();
           }
@@ -204,7 +210,7 @@ export default class LintenPlugin extends Plugin {
       name: 'Synthesize companion llms-full.txt from links',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView && activeView.file) {
+        if (activeView?.file && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.synthesizeFull(activeView.file);
           }
@@ -255,7 +261,7 @@ export default class LintenPlugin extends Plugin {
       name: 'Export compliance audit report (.md or .json)',
       checkCallback: (checking: boolean) => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView && activeView.file) {
+        if (activeView?.file && this.isLlmsFile(activeView.file)) {
           if (!checking) {
             void this.exportReportForActiveFile(activeView.file);
           }
@@ -268,10 +274,7 @@ export default class LintenPlugin extends Plugin {
     // 16. Editor Context Menu Integration
     this.registerEvent(
       this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor, view: MarkdownView) => {
-        if (!view.file) return;
-        const fname = view.file.name.toLowerCase();
-        const isLlms = fname.includes('llms') || fname.includes('.txt') || fname.includes('.md');
-        if (!isLlms) return;
+        if (!view.file || !this.isLlmsFile(view.file)) return;
 
         menu.addSeparator();
         menu.addItem(item => {
@@ -345,9 +348,55 @@ export default class LintenPlugin extends Plugin {
       name === 'llms-full.txt' ||
       name === 'llms.md' ||
       name === 'llms-full.md' ||
+      name === 'llms-small.txt' ||
+      name === 'llms-small.md' ||
       name.startsWith('llms-') ||
-      name.includes('llms')
+      name.startsWith('llms_')
     );
+  }
+
+  private checkVaultHasCompanion(file: TFile): boolean {
+    const nameLower = file.name.toLowerCase();
+    if (nameLower.includes('-full') || nameLower.includes('_full')) {
+      return true;
+    }
+
+    // 1. Check siblings in the same folder
+    if (file.parent && file.parent.children) {
+      for (const child of file.parent.children) {
+        if (child instanceof TFile && child.path !== file.path) {
+          const childName = child.name.toLowerCase();
+          if (
+            childName === 'llms-full.txt' ||
+            childName === 'llms-full.md' ||
+            childName.startsWith(`${file.basename}-full`) ||
+            childName.startsWith(`${file.basename}_full`) ||
+            childName.includes('-full') ||
+            childName.includes('_full')
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+
+    // 2. Check anywhere across the entire vault
+    const allFiles = this.app.vault.getFiles();
+    for (const f of allFiles) {
+      if (f.path !== file.path) {
+        const fname = f.name.toLowerCase();
+        if (
+          fname === 'llms-full.txt' ||
+          fname === 'llms-full.md' ||
+          fname.startsWith('llms-full') ||
+          fname.startsWith('llms_full')
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   private updateStatusBar(score: number | null, response?: LintenValidationResponse) {
@@ -379,13 +428,22 @@ export default class LintenPlugin extends Plugin {
   async validateActiveNote() {
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (!activeView || !activeView.file) {
-      new Notice('No active markdown note to validate.');
+      new Notice('No active note to validate.');
+      return;
+    }
+    if (!this.isLlmsFile(activeView.file)) {
+      new Notice(`Linten: "${activeView.file.name}" is not an llms.txt manifest. Please open an llms.txt or llms-full.txt note to audit.`);
       return;
     }
     await this.validateFile(activeView.file, true);
   }
 
   async validateFile(file: TFile, openModal: boolean = true) {
+    if (!this.isLlmsFile(file)) {
+      new Notice(`Linten: "${file.name}" is not an llms.txt manifest. Please open an llms.txt or llms-full.txt note to audit.`);
+      return;
+    }
+
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new Notice('Note is empty.');
@@ -394,10 +452,25 @@ export default class LintenPlugin extends Plugin {
 
     this.statusBarItemEl.setText('Linten: Auditing...');
     this.statusBarItemEl.setCssStyles({ color: '#5271FF' });
-    new Notice('Linten: Auditing llms.txt...');
+    new Notice(`Linten: Auditing ${file.name}...`);
 
     try {
       const response = await validateNoteContent(this.settings.apiUrl, content);
+
+      // Check companion parity inside the local vault
+      if (!response.specialist) {
+        response.specialist = {};
+      }
+      if (!response.specialist.dualFileParity) {
+        response.specialist.dualFileParity = {
+          hasCompanion: false,
+          companionRecommendation: ''
+        };
+      }
+      if (this.checkVaultHasCompanion(file)) {
+        response.specialist.dualFileParity.hasCompanion = true;
+      }
+
       const score = response.report?.scores?.overall ?? 100;
       
       this.lastAuditResponse = response;
@@ -441,27 +514,47 @@ export default class LintenPlugin extends Plugin {
   }
 
   private openAuditModal(docName: string, response: LintenValidationResponse, file?: TFile) {
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    const targetFile = file || activeView?.file;
+    if (targetFile && this.checkVaultHasCompanion(targetFile)) {
+      if (!response.specialist) response.specialist = {};
+      if (!response.specialist.dualFileParity) {
+        response.specialist.dualFileParity = { hasCompanion: true, companionRecommendation: '' };
+      } else {
+        response.specialist.dualFileParity.hasCompanion = true;
+      }
+    }
+
     new LintenAuditModal(this.app, docName, response, (action: string) => {
       void (async () => {
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        const targetFile = file || activeView?.file;
+        const returnToAudit = () => this.openAuditModal(docName, response, targetFile);
 
         if (action === 'audit-links') {
           if (targetFile) {
-            await this.auditNoteLinks(targetFile);
+            await this.auditNoteLinks(targetFile, returnToAudit);
           } else {
             new Notice('Open an active note to audit links.');
           }
         } else if (action === 'budget') {
           if (activeView) {
-            new LintenBudgetModal(this.app, docName, activeView.editor.getValue()).open();
+            new LintenBudgetModal(this.app, docName, activeView.editor.getValue(), returnToAudit).open();
           } else {
             new Notice('Open an active note to estimate budget.');
           }
         } else if (action === 'format') {
           if (activeView) {
-            activeView.editor.setValue(this.formatMarkdown(activeView.editor.getValue()));
-            new Notice('Note formatted according to canonical llms.txt conventions.');
+            const original = activeView.editor.getValue();
+            const formatted = this.formatMarkdown(original);
+            if (original.trim() === formatted.trim()) {
+              new Notice('Linten: Note is already formatted to canonical llms.txt standard (no changes needed).');
+              returnToAudit();
+            } else {
+              activeView.editor.setValue(formatted);
+              new Notice('Linten: Formatted note to canonical llms.txt structure (H1, blockquote, H2s, normalized links).');
+              if (targetFile) {
+                await this.validateFile(targetFile, true);
+              }
+            }
           }
         } else if (action === 'export') {
           if (targetFile) {
@@ -470,8 +563,24 @@ export default class LintenPlugin extends Plugin {
             await this.exportReportStandalone(docName, response);
           }
         } else if (action === 'badge') {
-          const domain = docName.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') || 'loopstates.com';
-          new LintenBadgeModal(this.app, domain).open();
+          let detectedDomain = '';
+          if (activeView) {
+            const content = activeView.editor.getValue();
+            const match = content.match(/https?:\/\/([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (match) detectedDomain = match[1];
+          }
+          new LintenBadgeModal(
+            this.app,
+            detectedDomain || 'loopstates.com',
+            (snippet: string) => {
+              if (activeView && activeView.editor) {
+                const cursor = activeView.editor.getCursor();
+                activeView.editor.replaceRange(`\n${snippet}\n`, cursor);
+                new Notice('Inserted Linten verification badge into active note.');
+              }
+            },
+            returnToAudit
+          ).open();
         } else if (action === 'synthesize') {
           if (targetFile) {
             await this.synthesizeFull(targetFile);
@@ -481,7 +590,7 @@ export default class LintenPlugin extends Plugin {
     }).open();
   }
 
-  async auditNoteLinks(file: TFile) {
+  async auditNoteLinks(file: TFile, onBack?: () => void) {
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new Notice('Note is empty.');
@@ -492,7 +601,7 @@ export default class LintenPlugin extends Plugin {
 
     try {
       const report = await checkNoteLinks(this.settings.apiUrl, content);
-      new LintenLinkAuditModal(this.app, file.name, report).open();
+      new LintenLinkAuditModal(this.app, file.name, report, onBack).open();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       new Notice(`Linten Link Auditor error: ${msg}`);
@@ -519,9 +628,20 @@ export default class LintenPlugin extends Plugin {
   }
 
   async synthesizeFull(file: TFile) {
+    if (!this.isLlmsFile(file)) {
+      new Notice(`Linten: "${file.name}" is not an llms.txt manifest.`);
+      return;
+    }
+
     const content = await this.app.vault.read(file);
     if (!content.trim()) {
       new Notice('Note is empty.');
+      return;
+    }
+
+    const hasLinks = /- \[[^\]]+\]\([^)]+\)/.test(content) || /\[[^\]]+\]\([^)]+\)/.test(content);
+    if (!hasLinks) {
+      new Notice('Linten: No markdown links found in this manifest to synthesize.');
       return;
     }
 
@@ -538,6 +658,10 @@ export default class LintenPlugin extends Plugin {
           await this.app.vault.modify(targetFile, res.fullContent);
         } else {
           targetFile = await this.app.vault.create(fullFileName, res.fullContent);
+        }
+
+        if (this.lastAuditResponse?.specialist?.dualFileParity) {
+          this.lastAuditResponse.specialist.dualFileParity.hasCompanion = true;
         }
 
         if (targetFile instanceof TFile) {
@@ -667,23 +791,54 @@ export default class LintenPlugin extends Plugin {
     const lines = raw.split('\n');
     let title = '';
     let summary = '';
-    const sections: { name: string; links: string[] }[] = [];
-    let currentSection = 'Core Documentation';
-    const sectionMap: Record<string, string[]> = {};
+    let foundFirstH1 = false;
+    let foundSummary = false;
+
+    interface Section {
+      title: string;
+      items: string[];
+    }
+    const sections: Section[] = [];
+    let currentSection: Section | null = null;
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (!title && /^#\s+(.+)$/.test(trimmed)) {
+
+      // Skip leading blank lines
+      if (!trimmed && !foundFirstH1) continue;
+
+      // 1. Detect First H1 Title
+      if (!foundFirstH1 && /^#\s+(.+)$/.test(trimmed)) {
         title = trimmed.replace(/^#\s+/, '').trim();
-      } else if (!summary && /^>\s*(.+)$/.test(trimmed)) {
+        foundFirstH1 = true;
+        continue;
+      }
+
+      // 2. Extra H1s are automatically demoted to H2 sections!
+      if (foundFirstH1 && /^#\s+(.+)$/.test(trimmed)) {
+        const secTitle = trimmed.replace(/^#\s+/, '').trim();
+        currentSection = { title: secTitle, items: [] };
+        sections.push(currentSection);
+        continue;
+      }
+
+      // 3. Blockquote summary
+      if (foundFirstH1 && !foundSummary && sections.length === 0 && /^>\s*(.+)$/.test(trimmed)) {
         summary = trimmed.replace(/^>\s*/, '').trim();
-      } else if (/^##\s+(.+)$/.test(trimmed)) {
-        currentSection = trimmed.replace(/^##\s+/, '').trim();
-        if (!sectionMap[currentSection]) {
-          sectionMap[currentSection] = [];
-          sections.push({ name: currentSection, links: sectionMap[currentSection] });
-        }
-      } else if (/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/.test(trimmed)) {
+        foundSummary = true;
+        continue;
+      }
+
+      // 4. H2 Section header
+      if (/^##\s+(.+)$/.test(trimmed)) {
+        const secTitle = trimmed.replace(/^##\s+/, '').trim();
+        currentSection = { title: secTitle, items: [] };
+        sections.push(currentSection);
+        continue;
+      }
+
+      // 5. Standardize Markdown link items: - [Title](url): Description
+      if (/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/.test(trimmed)) {
         const match = trimmed.match(/^[-*+]\s+\[([^\]]+)\]\(([^)]+)\)(.*)$/);
         if (match) {
           const anchor = match[1].trim();
@@ -693,17 +848,34 @@ export default class LintenPlugin extends Plugin {
             desc = desc.substring(1).trim();
           }
           const formattedLink = desc ? `- [${anchor}](${url}): ${desc}` : `- [${anchor}](${url})`;
-          if (!sectionMap[currentSection]) {
-            sectionMap[currentSection] = [];
-            sections.push({ name: currentSection, links: sectionMap[currentSection] });
+          if (!currentSection) {
+            currentSection = { title: 'Documentation', items: [] };
+            sections.push(currentSection);
           }
-          sectionMap[currentSection].push(formattedLink);
+          currentSection.items.push(formattedLink);
+          continue;
+        }
+      }
+
+      // 6. Preserve other content (subheadings, paragraphs, notes)
+      if (trimmed) {
+        if (!currentSection) {
+          if (!summary && foundFirstH1) {
+            summary = trimmed;
+            foundSummary = true;
+          } else {
+            currentSection = { title: 'Documentation', items: [] };
+            sections.push(currentSection);
+            currentSection.items.push(trimmed);
+          }
+        } else {
+          currentSection.items.push(trimmed);
         }
       }
     }
 
     const output: string[] = [];
-    output.push(`# ${title || 'Project Documentation'}`);
+    output.push(`# ${title || 'Documentation'}`);
     output.push('');
     if (summary) {
       output.push(`> ${summary}`);
@@ -714,10 +886,10 @@ export default class LintenPlugin extends Plugin {
       output.push('');
     } else {
       for (const sec of sections) {
-        output.push(`## ${sec.name}`);
+        output.push(`## ${sec.title}`);
         output.push('');
-        for (const l of sec.links) {
-          output.push(l);
+        for (const item of sec.items) {
+          output.push(item);
         }
         output.push('');
       }

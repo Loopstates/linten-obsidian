@@ -279,26 +279,54 @@
 }
 
 .linten-btn-synthesize {
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-weight: 600;
   font-size: 0.8rem;
-  padding: 6px 14px;
-  border-radius: 4px;
-  border: 1px solid var(--interactive-accent);
+  font-weight: 500;
   cursor: pointer;
-  white-space: nowrap;
-  transition: opacity 0.15s ease;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  transition: all 0.15s ease;
+  line-height: 1.4;
   box-shadow: none;
+  outline: none;
+  white-space: nowrap;
 }
 
 .linten-btn-synthesize:hover {
-  opacity: 0.9;
-  box-shadow: none;
+  background-color: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+  color: var(--text-normal);
 }
 
 .linten-btn-synthesize:active {
-  opacity: 0.75;
+  transform: translateY(1px);
+}
+
+.linten-companion-subtle-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.linten-companion-subtle-note .linten-inline-action {
+  color: var(--text-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.linten-companion-subtle-note .linten-inline-action:hover {
+  color: var(--text-accent-hover);
 }
 
 /* 6. Findings & Diagnostics List */
@@ -460,35 +488,38 @@
 }
 
 .linten-action-btn {
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 6px;
   background-color: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   color: var(--text-normal);
   transition: all 0.15s ease;
+  line-height: 1.4;
 }
 
 .linten-action-btn:hover {
   background-color: var(--background-modifier-hover);
-  transform: translateY(-1px);
+  border-color: var(--background-modifier-border-hover);
+  color: var(--text-normal);
+}
+
+.linten-action-btn:active {
+  transform: translateY(1px);
 }
 
 .linten-action-btn.mod-cta {
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
   border: 1px solid var(--interactive-accent);
+  font-weight: 600;
 }
 
 .linten-action-btn.mod-cta:hover {
   opacity: 0.9;
-}
-
-.linten-action-btn.mod-warning {
-  border-color: rgba(245, 158, 11, 0.5);
-  color: #F59E0B;
+  filter: brightness(1.05);
 }
 
 /* 8. Status Bar Item */
@@ -504,7 +535,37 @@
   opacity: 0.8;
 }
 
-/* 9. Badge Preview */
+/* 9. Badge Preview & Controls */
+.linten-badge-input-container {
+  margin-bottom: 14px;
+}
+
+.linten-badge-input-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 6px;
+}
+
+.linten-badge-input-field {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  border-radius: 6px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  outline: none;
+  font-family: var(--font-monospace);
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.linten-badge-input-field:focus {
+  border-color: #5271FF;
+}
+
 .linten-badge-preview {
   display: flex;
   align-items: center;

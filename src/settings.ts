@@ -74,7 +74,7 @@ export class LintenSettingTab extends PluginSettingTab {
     const attribution = containerEl.createDiv({ cls: 'linten-settings-attribution' });
     attribution.createSpan({ text: 'A product by ' });
     const link = attribution.createEl('a', {
-      text: 'Loopstates (loopstates.com)',
+      text: 'Loopstates',
       href: 'https://loopstates.com'
     });
     link.setAttr('target', '_blank');

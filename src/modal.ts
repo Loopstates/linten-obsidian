@@ -32,10 +32,10 @@ export class LintenAuditModal extends Modal {
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
     const titleRow = titleWrap.createDiv({ cls: 'linten-title-row' });
-    titleRow.createEl('h2', { text: 'Linten Compliance Audit', cls: 'linten-modal-title' });
+    titleRow.createEl('h2', { text: 'Linten Audit', cls: 'linten-modal-title' });
     titleRow.createSpan({ text: this.fileName, cls: 'linten-doc-badge' });
     titleWrap.createEl('p', {
-      text: 'LLMs.txt Spec Validation & Structure Audit',
+      text: 'llms.txt validation & diagnostics',
       cls: 'linten-modal-subtitle'
     });
 
@@ -73,35 +73,55 @@ export class LintenAuditModal extends Modal {
     this.createScoreMeter(scoreGrid, 'Best Practices', scores.bestPractices);
 
     // 4. Specialist AI Metrics Bar
+    const isFullFile = this.fileName.toLowerCase().includes('-full') || this.fileName.toLowerCase().includes('_full');
     if (spec) {
       const specBar = contentEl.createDiv({ cls: 'linten-spec-bar' });
       this.createSpecItem(specBar, 'Token Load', `~${spec.estimatedTokens.toLocaleString()} tok`, '#5271FF');
       this.createSpecItem(specBar, 'Word Count', `${spec.wordCount.toLocaleString()} words`);
       this.createSpecItem(specBar, 'Manifest Density', spec.tokenStatus?.toUpperCase() || 'OPTIMAL', '#10B981');
       if (parity) {
-        this.createSpecItem(specBar, 'Companion Parity', parity.hasCompanion ? 'PRESENT' : 'MISSING', parity.hasCompanion ? '#10B981' : '#F59E0B');
+        const parityLabel = isFullFile ? 'COMPANION' : (parity.hasCompanion ? 'PRESENT' : 'MISSING');
+        const parityColor = (isFullFile || parity.hasCompanion) ? '#10B981' : '#F59E0B';
+        this.createSpecItem(specBar, 'Companion Parity', parityLabel, parityColor);
       }
     }
 
-    // 5. Hero Companion Warning Callout with Independent Button Below
-    if (parity && !parity.hasCompanion) {
-      const companionBox = contentEl.createDiv({ cls: 'linten-companion-hero' });
-      const compContent = companionBox.createDiv({ cls: 'linten-companion-content' });
-      compContent.createEl('strong', { text: 'Companion Manifest Missing (llms-full.txt)' });
-      compContent.createEl('p', {
-        text: 'An un-truncated llms-full.txt provides the complete documentation corpus alongside this manifest.'
-      });
-
-      if (this.onAction) {
-        const actionRow = companionBox.createDiv({ cls: 'linten-companion-action' });
-        const btn = actionRow.createEl('button', {
-          cls: 'linten-btn-synthesize',
-          text: 'Synthesize Companion llms-full.txt'
+    // 5. Companion Status Callout: Warning if missing, Subtle note if present
+    if (!isFullFile && parity) {
+      if (!parity.hasCompanion) {
+        const companionBox = contentEl.createDiv({ cls: 'linten-companion-hero' });
+        const compContent = companionBox.createDiv({ cls: 'linten-companion-content' });
+        compContent.createEl('strong', { text: 'Companion Manifest Missing (llms-full.txt)' });
+        compContent.createEl('p', {
+          text: 'An un-truncated llms-full.txt provides the complete documentation corpus alongside this manifest.'
         });
-        btn.addEventListener('click', () => {
+
+        if (this.onAction) {
+          const actionRow = companionBox.createDiv({ cls: 'linten-companion-action' });
+          const btn = actionRow.createEl('button', {
+            cls: 'linten-action-btn',
+            text: 'Synthesize Companion llms-full.txt'
+          });
+          btn.addEventListener('click', () => {
+            this.close();
+            this.onAction?.('synthesize');
+          });
+        }
+      } else {
+        const subtleBox = contentEl.createDiv({ cls: 'linten-companion-subtle-note' });
+        subtleBox.createSpan({
+          text: '✓ Companion manifest (llms-full.txt) is present. If you added new links, you can '
+        });
+        const resynthLink = subtleBox.createEl('a', {
+          text: 're-synthesize it here',
+          cls: 'linten-inline-action'
+        });
+        resynthLink.addEventListener('click', (e) => {
+          e.preventDefault();
           this.close();
           this.onAction?.('synthesize');
         });
+        subtleBox.createSpan({ text: '.' });
       }
     }
 
@@ -153,15 +173,15 @@ export class LintenAuditModal extends Modal {
     if (this.onAction) {
       const actionsBar = contentEl.createDiv({ cls: 'linten-modal-actions' });
       
-      const btnSynthesize = actionsBar.createEl('button', { cls: 'linten-action-btn mod-cta' });
-      btnSynthesize.setText('Synthesize Companion');
+      const btnSynthesize = actionsBar.createEl('button', { cls: 'linten-action-btn' });
+      btnSynthesize.setText(parity?.hasCompanion ? 'Re-synthesize' : 'Synthesize Companion');
       btnSynthesize.addEventListener('click', () => {
         this.close();
         this.onAction?.('synthesize');
       });
 
       const btnLinks = actionsBar.createEl('button', {
-        cls: `linten-action-btn ${scores.links < 100 ? 'mod-warning' : ''}`
+        cls: 'linten-action-btn'
       });
       const brokenCount = findings.filter(f => f.category === 'links' || f.title?.toLowerCase().includes('broken')).length;
       btnLinks.setText(brokenCount > 0 ? `Audit Links (${brokenCount} Broken)` : 'Audit Links');
@@ -202,7 +222,7 @@ export class LintenAuditModal extends Modal {
     // 8. Modal Footer
     const footer = contentEl.createDiv({ cls: 'linten-modal-footer' });
     const footerLink = footer.createEl('a', {
-      text: 'Engineered by Loopstates (loopstates.com)',
+      text: 'Engineered by Loopstates',
       href: 'https://loopstates.com'
     });
     footerLink.setAttr('target', '_blank');
@@ -241,11 +261,13 @@ export class LintenAuditModal extends Modal {
 export class LintenLinkAuditModal extends Modal {
   private report: LintenCheckLinksResponse;
   private fileName: string;
+  private onBack?: () => void;
 
-  constructor(app: App, fileName: string, report: LintenCheckLinksResponse) {
+  constructor(app: App, fileName: string, report: LintenCheckLinksResponse, onBack?: () => void) {
     super(app);
     this.fileName = fileName;
     this.report = report;
+    this.onBack = onBack;
   }
 
   onOpen() {
@@ -262,7 +284,7 @@ export class LintenLinkAuditModal extends Modal {
     titleRow.createEl('h2', { text: 'Link Health Audit', cls: 'linten-modal-title' });
     titleRow.createSpan({ text: this.fileName, cls: 'linten-doc-badge' });
     titleWrap.createEl('p', {
-      text: 'Concurrent 100-link reachability probe verifying public endpoints and redirect chains',
+      text: 'Verify endpoint reachability and redirects',
       cls: 'linten-modal-subtitle'
     });
 
@@ -310,6 +332,15 @@ export class LintenLinkAuditModal extends Modal {
       }
     }
 
+    if (this.onBack) {
+      const actions = contentEl.createDiv({ cls: 'linten-modal-actions' });
+      const btnBack = actions.createEl('button', { text: '← Back to Audit Report', cls: 'linten-action-btn' });
+      btnBack.addEventListener('click', () => {
+        this.close();
+        this.onBack?.();
+      });
+    }
+
     const footer = contentEl.createDiv({ cls: 'linten-modal-footer' });
     const link = footer.createEl('a', { text: 'Engineered by Loopstates', href: 'https://loopstates.com' });
     link.setAttr('target', '_blank');
@@ -330,11 +361,13 @@ export class LintenLinkAuditModal extends Modal {
 export class LintenBudgetModal extends Modal {
   private noteContent: string;
   private fileName: string;
+  private onBack?: () => void;
 
-  constructor(app: App, fileName: string, noteContent: string) {
+  constructor(app: App, fileName: string, noteContent: string, onBack?: () => void) {
     super(app);
     this.fileName = fileName;
     this.noteContent = noteContent;
+    this.onBack = onBack;
   }
 
   onOpen() {
@@ -408,6 +441,15 @@ export class LintenBudgetModal extends Modal {
       cls: 'linten-finding-body',
       text: 'Tip: Spec v2 recommends keeping root llms.txt under 10,000 tokens for zero-cache latency across reasoning agents.'
     });
+
+    if (this.onBack) {
+      const actions = contentEl.createDiv({ cls: 'linten-modal-actions' });
+      const btnBack = actions.createEl('button', { text: '← Back to Audit Report', cls: 'linten-action-btn' });
+      btnBack.addEventListener('click', () => {
+        this.close();
+        this.onBack?.();
+      });
+    }
 
     const footer = contentEl.createDiv({ cls: 'linten-modal-footer' });
     const link = footer.createEl('a', { text: 'Engineered by Loopstates', href: 'https://loopstates.com' });
@@ -526,11 +568,13 @@ export class LintenPromptModal extends Modal {
 export class LintenBadgeModal extends Modal {
   private domain: string;
   private onInsertNote?: (snippet: string) => void;
+  private onBack?: () => void;
 
-  constructor(app: App, domain: string, onInsertNote?: (snippet: string) => void) {
+  constructor(app: App, domain: string, onInsertNote?: (snippet: string) => void, onBack?: () => void) {
     super(app);
     this.domain = domain;
     this.onInsertNote = onInsertNote;
+    this.onBack = onBack;
   }
 
   onOpen() {
@@ -543,12 +587,31 @@ export class LintenBadgeModal extends Modal {
     setIcon(logoBadge, LINTEN_ICON_ID);
 
     const titleWrap = headerEl.createDiv({ cls: 'linten-title-wrap' });
-    titleWrap.createEl('h2', { text: 'Linten Compliance Badge', cls: 'linten-modal-title' });
+    titleWrap.createEl('h2', { text: 'Linten Badge', cls: 'linten-modal-title' });
+    titleWrap.createEl('p', {
+      text: 'Dynamic live validation badge for your website or README',
+      cls: 'linten-modal-subtitle'
+    });
 
-    const cleanDomain = this.domain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim() || 'loopstates.com';
-    const badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(cleanDomain)}`;
-    const mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${cleanDomain})`;
-    const htmlSnippet = `<a href="https://${cleanDomain}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+    let initialDomain = this.domain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim();
+    if (!initialDomain || initialDomain.endsWith('.txt') || initialDomain.endsWith('.md')) {
+      initialDomain = 'loopstates.com';
+    }
+
+    let currentDomain = initialDomain;
+    let badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(currentDomain)}`;
+    let mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${currentDomain})`;
+    let htmlSnippet = `<a href="https://${currentDomain}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+
+    // Live URL / Domain Input Field
+    const inputContainer = contentEl.createDiv({ cls: 'linten-badge-input-container' });
+    inputContainer.createEl('label', { text: 'Target Live Website or Domain:', cls: 'linten-badge-input-label' });
+    const domainInput = inputContainer.createEl('input', {
+      type: 'text',
+      value: currentDomain,
+      cls: 'linten-badge-input-field'
+    });
+    domainInput.placeholder = 'e.g. yourdomain.com or https://yourdomain.com';
 
     const desc = contentEl.createDiv({ cls: 'linten-badge-desc' });
     desc.createEl('p', {
@@ -556,19 +619,41 @@ export class LintenBadgeModal extends Modal {
     });
 
     const previewBox = contentEl.createDiv({ cls: 'linten-badge-preview' });
-    previewBox.createEl('img', { attr: { src: badgeUrl, alt: 'Linten Badge Preview' } });
+    const previewImg = previewBox.createEl('img', { attr: { src: badgeUrl, alt: 'Linten Badge Preview' } });
 
     const snippetBox = contentEl.createDiv({ cls: 'linten-finding-item' });
     snippetBox.createDiv({ cls: 'linten-finding-head', text: 'Markdown Badge Code:' });
     const codeEl = snippetBox.createEl('code', { text: mdSnippet });
     codeEl.setCssStyles({ fontSize: '0.78rem' });
 
+    const updateSnippets = (raw: string) => {
+      const clean = raw.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim() || 'example.com';
+      currentDomain = clean;
+      badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(clean)}`;
+      mdSnippet = `[![Linten Spec Validated](${badgeUrl})](https://${clean})`;
+      htmlSnippet = `<a href="https://${clean}"><img src="${badgeUrl}" alt="Linten Spec Validated" /></a>`;
+      previewImg.setAttr('src', badgeUrl);
+      codeEl.setText(mdSnippet);
+    };
+
+    domainInput.addEventListener('input', () => {
+      updateSnippets(domainInput.value);
+    });
+
     const actions = contentEl.createDiv({ cls: 'linten-modal-actions' });
 
-    const btnCopyMd = actions.createEl('button', { text: 'Copy Markdown', cls: 'linten-action-btn mod-cta' });
+    if (this.onBack) {
+      const btnBack = actions.createEl('button', { text: '← Back to Audit', cls: 'linten-action-btn' });
+      btnBack.addEventListener('click', () => {
+        this.close();
+        this.onBack?.();
+      });
+    }
+
+    const btnCopyMd = actions.createEl('button', { text: 'Copy Markdown', cls: 'linten-action-btn' });
     btnCopyMd.addEventListener('click', () => {
       void navigator.clipboard.writeText(mdSnippet).then(() => {
-        this.close();
+        new Notice('Linten: Markdown badge copied to clipboard.');
       });
     });
 
@@ -583,14 +668,14 @@ export class LintenBadgeModal extends Modal {
     const btnCopyHtml = actions.createEl('button', { text: 'Copy HTML', cls: 'linten-action-btn' });
     btnCopyHtml.addEventListener('click', () => {
       void navigator.clipboard.writeText(htmlSnippet).then(() => {
-        this.close();
+        new Notice('Linten: HTML badge copied to clipboard.');
       });
     });
 
     const btnCopySvg = actions.createEl('button', { text: 'Copy SVG URL', cls: 'linten-action-btn' });
     btnCopySvg.addEventListener('click', () => {
       void navigator.clipboard.writeText(badgeUrl).then(() => {
-        this.close();
+        new Notice('Linten: SVG URL copied to clipboard.');
       });
     });
 
