@@ -1,6 +1,6 @@
 {
   "name": "linten-obsidian",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Obsidian community plugin to validate and scaffold llms.txt files by Loopstates.",
   "main": "main.js",
   "scripts": {
