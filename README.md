@@ -1,6 +1,7 @@
 # Linten: llms.txt Validator & Scaffolder for Obsidian
 
 [![Version](https://img.shields.io/badge/Obsidian_Plugin-v1.0.0-5271FF?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md/plugins?id=linten)
+[![VS Code Extension](https://img.shields.io/badge/VS_Code-Marketplace_Available-007ACC?style=flat-square&logo=visualstudiocode&logoColor=white)](https://marketplace.visualstudio.com/items?itemName=Loopstates.linten-vscode)
 [![Spec Standard](https://img.shields.io/badge/Standard-LLMs.txt_Spec_v2-10B981?style=flat-square)](https://llmstxt.org)
 [![Backend](https://img.shields.io/badge/Backend-Linten_Cloud_API-5271FF?style=flat-square)](https://linten.apps.loopstates.com)
 [![Privacy](https://img.shields.io/badge/Privacy-Stateless_%2F_Zero_Data_Retention-success?style=flat-square)](https://loopstates.com)
@@ -102,4 +103,5 @@ For inquiries, custom domain validation servers, or support, contact **hello@loo
 
 ## License
 
-MIT &copy; 2026 [Loopstates](https://loopstates.com). All rights reserved.
+Proprietary &copy; 2026 [Loopstates](https://loopstates.com). All rights reserved.  
+Source-available for personal evaluation and security auditing under the [Loopstates Client License](LICENSE). Commercial copying, rebranding, or competitive redistribution is strictly prohibited.
