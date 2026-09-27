@@ -429,7 +429,7 @@ export class LintenTemplateModal extends FuzzySuggestModal<IndustryTemplate> {
   }
 
   getItems(): IndustryTemplate[] {
-    return Object.values<IndustryTemplate>(TEMPLATES);
+    return Object.values(TEMPLATES) as IndustryTemplate[];
   }
 
   getItemText(item: IndustryTemplate): string {

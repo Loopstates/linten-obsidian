@@ -25,7 +25,7 @@ export class LintenSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl).setName('Linten Settings').setHeading();
+    new Setting(containerEl).setName('Configuration').setHeading();
 
     // Transparency Notice for Obsidian Community Compliance
     const noticeBox = containerEl.createDiv({ cls: 'linten-settings-notice' });

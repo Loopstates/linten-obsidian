@@ -128,8 +128,8 @@ async function generateAuthHeaders(): Promise<Record<string, string>> {
   );
 
   const signature = await crypto.subtle.sign('HMAC', key, enc.encode(message));
-  const hashArray = Array.from(new Uint8Array(signature));
-  const token = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashArray: number[] = Array.from(new Uint8Array(signature));
+  const token: string = hashArray.map((b: number): string => b.toString(16).padStart(2, '0')).join('');
 
   return {
     'Content-Type': 'application/json',

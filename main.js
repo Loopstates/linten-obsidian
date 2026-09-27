@@ -44,7 +44,7 @@ var LintenSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian.Setting(containerEl).setName("Linten Settings").setHeading();
+    new import_obsidian.Setting(containerEl).setName("Configuration").setHeading();
     const noticeBox = containerEl.createDiv({ cls: "linten-settings-notice" });
     noticeBox.createEl("p", {
       text: "Privacy Notice: Linten connects to the Linten Cloud Middleware (linten.apps.loopstates.com) to execute live HTTP link reachability tests and spec parsing. Content is validated in memory and never stored."
@@ -1781,7 +1781,8 @@ ${snippet}
     }
   }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data || {});
   }
   async saveSettings() {
     await this.saveData(this.settings);
