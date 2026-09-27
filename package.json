@@ -1,0 +1,35 @@
+{
+  "name": "linten-obsidian",
+  "version": "1.0.0",
+  "description": "Obsidian community plugin to validate and scaffold llms.txt files by Loopstates.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "llms.txt",
+    "validator",
+    "linter",
+    "loopstates"
+  ],
+  "homepage": "https://loopstates.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loopstates/linten-obsidian.git"
+  },
+  "bugs": {
+    "url": "https://github.com/loopstates/linten-obsidian/issues"
+  },
+  "author": "Loopstates <hello@loopstates.com> (https://loopstates.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.0",
+    "obsidian": "^1.5.7",
+    "typescript": "^5.3.3"
+  }
+}

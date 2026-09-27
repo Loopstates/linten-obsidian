@@ -1,0 +1,11 @@
+{
+  "id": "linten",
+  "name": "Linten: llms.txt Validator",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Validate and scaffold spec-compliant llms.txt files with AI token budget estimation and live link health probing by Loopstates.",
+  "author": "Loopstates",
+  "authorUrl": "https://loopstates.com",
+  "fundingUrl": "https://loopstates.com",
+  "isDesktopOnly": false
+}
