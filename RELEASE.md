@@ -42,7 +42,7 @@ npm run release 1.0.4 "feat: real-time link health caching and mobile improvemen
    - Creates git tag `x.y.z`.
    - Pushes branch `main` and tags to `Loopstates/linten-obsidian-source`.
 4. **Public Distribution Repository**:
-   - Copies `main.js`, `manifest.json`, `styles.css`, `README.md`, and `LICENSE` to `../linten-obsidian-public`.
+   - Copies `main.js`, `manifest.json`, `styles.css`, `README.md`, and `LICENSE` to `../obsidian-public`.
    - Commits distribution files.
    - Creates git tag `x.y.z`.
    - Pushes branch `main` and tags to `Loopstates/linten-obsidian`.

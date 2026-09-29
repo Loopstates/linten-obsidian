@@ -37,7 +37,9 @@ if (!targetVersion || !/^\d+\.\d+\.\d+$/.test(targetVersion)) {
 }
 
 const privateRoot = resolve('.');
-const publicRoot = resolve(join(privateRoot, '../linten-obsidian-public'));
+const publicRoot = existsSync(resolve(join(privateRoot, '../obsidian-public')))
+  ? resolve(join(privateRoot, '../obsidian-public'))
+  : resolve(join(privateRoot, '../linten-obsidian-public'));
 const vaultPluginRoot = '/Volumes/Jitesh-MacBook-SSD/Resources/obsidian/Obsidian/.obsidian/plugins/linten';
 
 log(`\n🚀 Starting Automated Release for v${targetVersion}...`, BOLD + GREEN);
