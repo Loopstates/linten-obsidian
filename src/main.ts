@@ -104,11 +104,11 @@ export default class LintenPlugin extends Plugin {
     // 7. Command: Audit Remote Domain or URL
     this.addCommand({
       id: 'audit-domain',
-      name: 'Audit remote website or URL (e.g. stripe.com)',
+      name: 'Audit remote website or URL (e.g. acme.com)',
       callback: () => {
         new LintenPromptModal(this.app, {
           title: 'Linten: Audit Remote Domain or URL',
-          placeholder: 'stripe.com or https://docs.anthropic.com/llms.txt',
+          placeholder: 'acme.com or https://acme.com/llms.txt',
           initialValue: '',
           submitLabel: 'Audit URL',
           onSubmit: (url: string) => {
@@ -193,7 +193,7 @@ export default class LintenPlugin extends Plugin {
       callback: () => {
         new LintenPromptModal(this.app, {
           title: 'Linten: Scaffold Starter llms.txt',
-          placeholder: 'stripe.com or loopstates.com',
+          placeholder: 'acme.com',
           initialValue: '',
           submitLabel: 'Generate Starter',
           onSubmit: (domain: string) => {
@@ -238,7 +238,7 @@ export default class LintenPlugin extends Plugin {
       name: 'Generate README / Note compliance badge',
       callback: () => {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        let domain = 'loopstates.com';
+        let domain = 'acme.com';
         if (activeView) {
           const content = activeView.editor.getValue();
           const match = content.match(/https?:\/\/([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
@@ -571,7 +571,7 @@ export default class LintenPlugin extends Plugin {
           }
           new LintenBadgeModal(
             this.app,
-            detectedDomain || 'loopstates.com',
+            detectedDomain || 'acme.com',
             (snippet: string) => {
               if (activeView && activeView.editor) {
                 const cursor = activeView.editor.getCursor();

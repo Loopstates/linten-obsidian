@@ -27,7 +27,7 @@ Whether you maintain a public digital garden, corporate knowledge base, or priva
 * **30 Spec-Compliant Industry Starter Presets**: Fuzzy search and load industry-tested templates for SaaS, Developer APIs, E-Commerce, Healthcare, Corporate Law, AI Infrastructure, Shopify, Notion, and more.
 * **Companion Synthesis (`llms-full.txt`)**: Automatically crawls referenced documentation links to bundle un-truncated reference archives into your vault.
 * **Canonical AST Auto-Formatter**: Normalizes inconsistent markdown to strict canonical `llms.txt` AST structure with a single click.
-* **Remote Website / Domain Auditing**: Audit external documentation sites (e.g. `docs.anthropic.com` or `stripe.com`) directly from Obsidian without needing a local file.
+* **Remote Website / Domain Auditing**: Audit external documentation sites (e.g. `acme.com`) directly from Obsidian without needing a local file.
 * **Dynamic Note Compliance Badge**: Generates live tamper-proof SVG badges verifying your domain's live `llms.txt` compliance score.
 * **Vault Compliance Report Exporter**: Exports detailed audit findings, link health summaries, and token metrics into structured Markdown (`.md`) reports.
 * **Cross-Platform Mobile Ready**: Built using Web Crypto (`crypto.subtle`) and native Obsidian `requestUrl`, ensuring identical performance across Desktop (macOS, Windows, Linux) and Mobile (iOS, iPadOS, Android).

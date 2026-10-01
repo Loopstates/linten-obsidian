@@ -1,63 +1,21 @@
-LOOPSTATES SOURCE-AVAILABLE & PROPRIETARY CLIENT LICENSE
-Version 1.0 — 2026
+MIT License
 
 Copyright (c) 2026 Loopstates (https://loopstates.com)
-All rights reserved.
 
-================================================================================
-1. GRANT OF LICENSE
-================================================================================
-Subject to the terms and conditions of this License, Loopstates ("Licensor") 
-hereby grants to any person obtaining a copy of this software ("Software") 
-a limited, non-exclusive, non-transferable, revocable license to:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-(a) Download, install, and execute the Software solely as an end-user plugin 
-    within the official Obsidian application for personal or internal business use.
-(b) Inspect and review the source code solely for security auditing, compliance 
-    verification, and personal evaluation purposes.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-================================================================================
-2. RESTRICTIONS — NO COPYING, FORKING FOR RESALE, OR COMPETITIVE USE
-================================================================================
-Except as expressly permitted in Section 1, you may NOT, directly or indirectly:
-
-(a) Copy, duplicate, reproduce, distribute, publish, sub-license, sell, lease, 
-    or rent the Software or any portion thereof.
-(b) Create derivative works, modifications, re-branded versions, or "white-labeled" 
-    clones of the Software for public or commercial distribution.
-(c) Use the Software, its source code, or its architecture to design, develop, 
-    or market a competing validation, linting, or AI document scaffolding product.
-(d) Reverse-engineer, decompile, tamper with, or emulate the proprietary 
-    Linten Cloud API (`https://linten.apps.loopstates.com`), its authentication 
-    handshake, or serverless infrastructure.
-
-================================================================================
-3. TRADEMARK & INTELLECTUAL PROPERTY RESERVATION
-================================================================================
-This License does NOT grant any rights to use the trademarks, service marks, 
-trade names, logos, or domain names of Licensor, including without limitation:
-
-• "Linten"
-• "Loopstates"
-• The Linten geometric gem vector logo and visual branding assets
-• loopstates.com, linten.apps.loopstates.com
-
-All rights, title, interest, and intellectual property in and to the Software, 
-associated documentation, and backend cloud systems remain exclusively with 
-Loopstates.
-
-================================================================================
-4. DISCLAIMER OF WARRANTIES & LIMITATION OF LIABILITY
-================================================================================
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, 
-OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
-THE SOFTWARE.
-
-================================================================================
-For licensing inquiries, commercial partnerships, or custom enterprise deployments:
-Contact: hello@loopstates.com | https://loopstates.com
-================================================================================
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

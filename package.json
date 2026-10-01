@@ -1,6 +1,6 @@
 {
   "name": "linten-obsidian",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Obsidian community plugin to validate and scaffold llms.txt files by Loopstates.",
   "main": "main.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "url": "https://github.com/loopstates/linten-obsidian/issues"
   },
   "author": "Loopstates <hello@loopstates.com> (https://loopstates.com)",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.11.0",
     "esbuild": "^0.20.0",

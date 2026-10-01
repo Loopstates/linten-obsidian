@@ -1471,7 +1471,7 @@ var LintenPromptModal = class extends import_obsidian3.Modal {
     const titleWrap = headerEl.createDiv({ cls: "linten-title-wrap" });
     titleWrap.createEl("h2", { text: this.titleText, cls: "linten-modal-title" });
     let inputValue = this.initialValue;
-    new import_obsidian3.Setting(contentEl).setName("Target Website or Domain").setDesc("Enter a domain name or URL (e.g. stripe.com or loopstates.com)").addText((text) => {
+    new import_obsidian3.Setting(contentEl).setName("Target Website or Domain").setDesc("Enter a domain name or URL (e.g. acme.com)").addText((text) => {
       text.setPlaceholder(this.placeholder);
       text.setValue(this.initialValue);
       text.onChange((val) => {
@@ -1523,7 +1523,7 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
     });
     let initialDomain = this.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").trim();
     if (!initialDomain || initialDomain.endsWith(".txt") || initialDomain.endsWith(".md")) {
-      initialDomain = "loopstates.com";
+      initialDomain = "acme.com";
     }
     let currentDomain = initialDomain;
     let badgeUrl = `https://linten.apps.loopstates.com/badge?domain=${encodeURIComponent(currentDomain)}`;
@@ -1536,7 +1536,7 @@ var LintenBadgeModal = class extends import_obsidian3.Modal {
       value: currentDomain,
       cls: "linten-badge-input-field"
     });
-    domainInput.placeholder = "e.g. yourdomain.com or https://yourdomain.com";
+    domainInput.placeholder = "e.g. acme.com or https://acme.com";
     const desc = contentEl.createDiv({ cls: "linten-badge-desc" });
     desc.createEl("p", {
       text: "Dynamic SVG badge that automatically validates your live /llms.txt AST score on every load."
@@ -1666,11 +1666,11 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
     });
     this.addCommand({
       id: "audit-domain",
-      name: "Audit remote website or URL (e.g. stripe.com)",
+      name: "Audit remote website or URL (e.g. acme.com)",
       callback: () => {
         new LintenPromptModal(this.app, {
           title: "Linten: Audit Remote Domain or URL",
-          placeholder: "stripe.com or https://docs.anthropic.com/llms.txt",
+          placeholder: "acme.com or https://acme.com/llms.txt",
           initialValue: "",
           submitLabel: "Audit URL",
           onSubmit: (url) => {
@@ -1747,7 +1747,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       callback: () => {
         new LintenPromptModal(this.app, {
           title: "Linten: Scaffold Starter llms.txt",
-          placeholder: "stripe.com or loopstates.com",
+          placeholder: "acme.com",
           initialValue: "",
           submitLabel: "Generate Starter",
           onSubmit: (domain) => {
@@ -1787,7 +1787,7 @@ var LintenPlugin = class extends import_obsidian4.Plugin {
       name: "Generate README / Note compliance badge",
       callback: () => {
         const activeView = this.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView);
-        let domain = "loopstates.com";
+        let domain = "acme.com";
         if (activeView) {
           const content = activeView.editor.getValue();
           const match = content.match(/https?:\/\/([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
@@ -2061,7 +2061,7 @@ Score: ${score}/100
           }
           new LintenBadgeModal(
             this.app,
-            detectedDomain || "loopstates.com",
+            detectedDomain || "acme.com",
             (snippet) => {
               if (activeView && activeView.editor) {
                 const cursor = activeView.editor.getCursor();

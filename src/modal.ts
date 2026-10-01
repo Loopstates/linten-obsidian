@@ -527,7 +527,7 @@ export class LintenPromptModal extends Modal {
 
     new Setting(contentEl)
       .setName('Target Website or Domain')
-      .setDesc('Enter a domain name or URL (e.g. stripe.com or loopstates.com)')
+      .setDesc('Enter a domain name or URL (e.g. acme.com)')
       .addText(text => {
         text.setPlaceholder(this.placeholder);
         text.setValue(this.initialValue);
@@ -595,7 +595,7 @@ export class LintenBadgeModal extends Modal {
 
     let initialDomain = this.domain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').trim();
     if (!initialDomain || initialDomain.endsWith('.txt') || initialDomain.endsWith('.md')) {
-      initialDomain = 'loopstates.com';
+      initialDomain = 'acme.com';
     }
 
     let currentDomain = initialDomain;
@@ -611,7 +611,7 @@ export class LintenBadgeModal extends Modal {
       value: currentDomain,
       cls: 'linten-badge-input-field'
     });
-    domainInput.placeholder = 'e.g. yourdomain.com or https://yourdomain.com';
+    domainInput.placeholder = 'e.g. acme.com or https://acme.com';
 
     const desc = contentEl.createDiv({ cls: 'linten-badge-desc' });
     desc.createEl('p', {
